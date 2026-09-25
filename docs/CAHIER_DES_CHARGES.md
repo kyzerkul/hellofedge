@@ -1,4 +1,4 @@
-# HELLOFEDGE — Cahier des charges v0.2
+# HELLOFEDGE — Cahier des charges v0.3
 
 > Compagnon de trading **USD/JPY uniquement**, basé sur la stratégie SMC RedPillFX, enrichi des leviers propres à USD/JPY.
 > Statut : **brouillon de conception**. Aucune ligne de code tant que ce document n'est pas validé.
@@ -33,14 +33,14 @@ Sources : le PDF (113 pages) et **la transcription complète de la formation**. 
 |---|---|
 | **W, D1, H4, H1, M15** | HTF : structure externe, **biais** (IPA/EPA + liquidité), POI |
 | **M5 et M3** | UT principales : structure interne, lecture du cycle |
-| **M1** | Positionnement fin |
+| **M5, M3, M1** | Positionnement : l'entrée peut se faire sur **M5, M3 ou M1** |
 | **M15** | Repli pour le déclencheur si rien de propre en M5/M3/M1 |
-| **15 s / 30 s** | Usage avancé du formateur (hors V1) |
 
 - HTF en tendance → **setups de continuation**. HTF en consolidation → **setups de retournement** sur la structure interne, et seulement après la prise d'une grosse liquidité.
 - L'analyse part **toujours du HTF vers le LTF** (« c'est le HTF qui dit ce qu'on fait en LTF »). Le prix est **fractal** : le même cycle se répète d'une UT à l'autre (structure en « poupées russes »).
 - Précision : dans le PDF, « BPL » (p.20) est une **coquille pour Breaker Block**. La transcription le confirme : **le breaker block ne s'utilise que lorsque le prix vient de prendre une grosse liquidité externe**.
-- Note technique : OANDA ne fournit pas de bougies M3 ; elles sont reconstruites à partir du M1.
+- **Pas d'UT en secondes** (15 s / 30 s) : hors périmètre.
+- Note technique : l'API OANDA v20 propose S5 à S30, M1, M2, M4, M5, M10, M15, M30, H1 à H12, D, W et M, mais **pas M3** (vérifié dans la spécification officielle `oanda/v20-openapi`). Les plateformes de graphiques affichent du M3 en agrégeant du M1, et le moteur fera exactement pareil : chaque bougie M3 = open de la 1re minute, high et low maximum et minimum des 3 minutes, close de la 3e, alignée sur :00, :03, :06… Le résultat est identique, sans perte d'information.
 
 ### 1.2 Structure de marché « élite »
 - **Structure externe** : entre le dernier high majeur et le dernier low majeur d'une UT haute. **Structure interne** : tout ce qui se passe entre les deux. On sort de la structure interne quand l'un des deux extrêmes est cassé.
@@ -187,6 +187,16 @@ La formation vient de l'or et des indices. USD/JPY a ses propres moteurs, qui de
 - **Fins de mois, de trimestre et d'année fiscale japonaise (31 mars)** : flux de rapatriement.
 - **Expirations d'options (NY cut, 10h00 New York = 16h00 Paris)** : les gros strikes proches du prix agissent comme des aimants. C'est pile la fin de ta fenêtre NY.
 - **Pour USD/JPY, la session asiatique est la session domestique du yen.** La formation la traite comme une simple accumulation, mais elle peut porter de vrais mouvements (Tokyo, BoJ, fuites de presse). → **Les statistiques vérifieront si le schéma « Asie = accumulation » tient sur USD/JPY**, et à quelle fréquence.
+
+### 3.3 bis Étude des sessions (premier livrable de recherche)
+Tu envisages de passer à **Asie + Londres**. Avant de trancher, l'outil produira une **étude chiffrée sur l'historique USD/JPY** (plusieurs années de M1 OANDA) :
+- amplitude, volatilité et « propreté » (respect de la structure, faux signaux) **par session et par fenêtre horaire** ;
+- **effet gotobi** et **fixing de Tokyo** (09h55 JST) : direction et amplitude moyennes avant et après le fix, jours gotobi vs jours normaux, fins de mois ;
+- taux de prise de l'ASH et de l'ASL par Londres, et comportement de l'Asie sur USD/JPY (accumulation ou vraie tendance ?) ;
+- fréquence de la manipulation dans chaque fenêtre (9h–10h, 14h30, 15h30, 17h–18h) ;
+- respect de l'IPA/EPA par UT et par session.
+
+La littérature académique documente une demande de dollars des importateurs japonais avant le fixing de Tokyo, plus forte les jours gotobi. **Mais on ne s'appuiera que sur nos propres mesures sur USD/JPY récent**, pas sur des chiffres généraux.
 
 ### 3.4 Contexte technique complémentaire
 - **ADR** (average daily range) : quelle part du range moyen a déjà été consommée ? Si l'ADR est déjà atteint à 15h, les objectifs lointains sont peu probables.
@@ -361,7 +371,35 @@ Tous les messages sont des **informations**, jamais des ordres.
   - performance des setups **avec vs sans** B/S, IDC balayé, zone valide ou trap ;
   - impact des jours de news, des régimes de taux et de la proximité d'une zone d'intervention ;
   - écart entre le plan et ton exécution réelle (discipline).
+- **Priorité IPA/EPA** : ton observation est que **USD/JPY respecte très bien l'IPA/EPA**. Les premières statistiques porteront donc là-dessus : taux de comblement des IPA par UT (W → M15), délai avant comblement, taux de rebond au retour sur l'IPA, effet du FVG qui précède, fréquence du « ping-pong » d'IPA en IPA.
 - **Backtest** : rejouer le moteur SMC sur des années d'historique M1 USD/JPY pour valider ou invalider chaque règle **avant** de risquer de l'argent.
+
+---
+
+## 8 bis. La boucle d'apprentissage : l'outil s'améliore avec tes retours
+
+L'outil ne se contente pas de produire des analyses. **Il apprend de tes retours et de tes résultats.**
+
+### 8b.1 Ce que tu renseignes (en quelques clics)
+- **Sur chaque détection** tracée par le moteur (swing Strong, zone, IPA, B/S, CISD…) : ✅ juste / ❌ fausse / ✏️ corrigée (tu déplaces le niveau).
+- **Sur chaque analyse et chaque plan** : utile / pas utile, biais juste ou faux a posteriori, commentaire libre.
+- **Sur chaque setup alerté** : pris / pas pris, et pourquoi (pas convaincu, hors horaire, déjà en position, raté…).
+- **Journal de trades** : chaque trade est **relié à l'analyse et au setup qui l'ont inspiré** (ou marqué « hors plan »). Entrée, SL, TP, taille, résultat en R et en €, capture, émotion avant et après, respect du plan (oui / non), leçon.
+- **Prop firm** : solde, drawdown restant, règles du compte (voir 5.2).
+
+### 8b.2 Ce que l'outil en fait
+| Niveau | Mécanisme | Exemple |
+|---|---|---|
+| **Calibration du moteur** | Tes corrections ajustent les paramètres de détection | Tu corriges souvent des equal lows ratés → la tolérance en pips est élargie ; des B/S « pas assez flagrants » sont rejetés → le seuil d'accélération monte |
+| **Pondération du score** | Les confluences sont repondérées selon les **résultats réels** (setups pris et non pris) | Sur USD/JPY, l'IFVG en M3 gagne plus que le CISD en M1 → il pèse plus dans la note |
+| **Mémoire des agents** | Les leçons validées (journal, débriefs) sont réinjectées dans les briefs et les plans | « Les 3 derniers setups de London Close contre le biais H4 ont échoué » apparaît dans le plan du jour |
+| **Revue hebdomadaire** | L'agent Journal & Stats propose des ajustements, **que tu valides ou refuses** | « Proposition : ne plus alerter en fenêtre 14h30 les jours de NFP » |
+
+### 8b.3 Garde-fous
+- **Rien ne change en silence** : chaque ajustement est proposé, expliqué, **validé par toi** et versionné, avec retour arrière possible.
+- **Taille d'échantillon minimale** avant toute repondération (pas de conclusion sur 5 trades).
+- **Validation hors échantillon** : un réglage n'est adopté que s'il tient sur des données qu'il n'a pas servi à fabriquer (anti-suroptimisation).
+- La **règle de la formation reste la référence**. L'apprentissage ajuste des seuils et des poids, il ne réécrit pas ta stratégie.
 
 ---
 
@@ -404,9 +442,9 @@ Chaque phase est livrée **utilisable**, pas seulement « en cours ».
 La transcription a réglé la plupart des questions de la v0.1 : BPL = breaker block, IPA/EPA, biais, modèle d'entrée, horaires, TP, BE, nombre de trades. Il reste :
 
 **Décisions qui changent l'architecture** :
-1. **Sur quoi trades-tu USD/JPY ?** Spot/CFD (broker, plateforme MT5, TradingView…) ou **futures 6J** via une prop comme Topstep ? Ça détermine le flux sur lequel le moteur calcule la liquidité (3.5).
+1. **Quelle prop firm, et sur quelle plateforme ?** Tu trades exclusivement en prop firm (un compte de 5K aujourd'hui, peut-être 10K plus tard). Un compte de 5K correspond plutôt à une prop **CFD/spot** (USD/JPY direct) qu'à une prop futures (6J). Il me faut le nom et les règles : perte max journalière, drawdown max, statique ou suiveur, objectif, jours minimum, restrictions sur les news.
 2. Ton **pays** (accès OANDA : compte démo, juridiction) et ton **fuseau horaire**.
-3. **Fenêtres tradées** : les trois (Londres, NY, London Close) ou surtout NY comme le formateur ? Et la session de Tokyo t'intéresse-t-elle ?
+3. ~~Fenêtres tradées~~ : **Londres et New York aujourd'hui, Asie et Londres à terme.** → L'étude des sessions (3.3 bis) tranchera, chiffres à l'appui.
 
 **Réglages de la stratégie** (on peut les calibrer ensemble en phase 1) :
 4. **Cassure valide** : sur clôture de bougie ou sur mèche ? (La formation ne le précise pas.)
