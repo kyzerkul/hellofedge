@@ -71,6 +71,7 @@ Sources : le PDF (113 pages) et **la transcription complète de la formation**. 
 - **EPA (prix efficient)** : après chaque cassure (nouveau high ou nouveau low), **le prix revient toucher l'ancien point de structure cassé** avant de continuer. → Continuation probable.
 - **IPA (prix inefficient)** : le prix casse puis continue **sans revenir** sur l'ancien point de structure. Il reste un « trou ». → Le prix a de fortes chances de **revenir combler l'IPA** (retournement possible), et **le retour sur l'IPA est une zone de rebond et de setup**.
 - **Règle** : un IPA n'est intéressant que s'il est **précédé d'un FVG** (imbalance).
+- **Règle du trader : un IPA est considéré comme touché dès qu'une mèche l'atteint** (contrairement à la prise de liquidité, qui exige la clôture du corps).
 - **Uniquement en HTF : W, D1, H4, H1, M15.** Jamais en M5/M3/M1.
 - Plus l'UT est haute, plus l'IPA compte. Un IPA peut exister en H1 alors qu'il est déjà comblé en M15 : il reste valide.
 - Le prix va souvent **d'IPA en IPA** (« ping-pong »).

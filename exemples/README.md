@@ -99,7 +99,7 @@ Statut d'une lecture : `à valider` tant que le trader ne l'a pas confirmée.
 |---|---|
 | Déroulé | Le prix remonte, passe **à travers l'IPA H1 (154.05)** et fait **154.135** à 08:44 UTC |
 | Résultat probable | **SL touché (−1R)** |
-| Lien avec les règles | Selon la formation (1.5 et 1.10 du cahier des charges), une zone située **juste sous un IPA non comblé** est un piège : le prix va d'abord combler l'IPA. Ici, la vente était placée sous l'IPA H1 encore ouvert. **C'est exactement le cas que le moteur doit signaler en TRAP** |
+| Correction du trader | L'IPA H1 avait **déjà été touché par une mèche** avant l'entrée : il comptait comme comblé. La vraie cause de la perte est ailleurs : le mouvement était rapide et **la zone de liquidité n'a pas été identifiée ni tracée**. Le moteur doit donc surtout rendre visibles les liquidités que l'œil n'a pas le temps de tracer |
 | Statut | à valider |
 
 ### Ex10 · 16/09/2026 · M5 · vente (`lot-2/ex10.png`)
@@ -215,7 +215,7 @@ Statut d'une lecture : `à valider` tant que le trader ne l'a pas confirmée.
 ## Constats du lot 2
 
 5. **Tes ventes suivent le même schéma que tes achats**, inversé : prise d'un plus haut (range de Tokyo, point de structure de la veille, plus haut d'accumulation), rejet, vente, et TP sur l'extrême opposé de la session (plus bas de Tokyo, de Londres ou de la veille). Les RR visés sont plus grands que dans le lot 1 (4 à 5R).
-6. **Ex8 → Ex9 montre la valeur du filtre IPA** : une vente placée sous un IPA H1 non comblé a été stoppée quand le prix est allé combler l'IPA. Le moteur doit afficher « TRAP : IPA H1 ouvert au-dessus ».
+6. **Ex8 → Ex9** : corrigé par le trader. L'IPA était déjà touché par une mèche ; la perte vient d'une zone de liquidité non tracée dans un mouvement rapide. C'est un argument fort pour la carte des liquidités automatique.
 7. **Les grosses annonces ont décidé de deux trades sur cinq** : les NFP (Ex7) et, probablement, le FOMC (Ex10). Le compagnon de position doit prévenir avant chaque annonce majeure, avec le R en cours et la distance au SL.
 8. **Tu déplaces parfois ton TP en cours de route** (Ex2, Ex7). Le journal doit enregistrer le TP initial, le TP final et la raison du changement, pour mesurer si ces ajustements te rapportent.
 
@@ -229,21 +229,23 @@ Statut d'une lecture : `à valider` tant que le trader ne l'a pas confirmée.
 
 Les captures vont **par paires : l'entrée, puis le résultat** (précision du trader). Seule Ex5 n'a pas de capture de résultat.
 
-### Bilan provisoire
-| Trade | Captures | Entrée (UTC) | Résultat probable | Défaut identifié |
+### Bilan confirmé par le trader
+| Trade | Captures | Entrée (UTC) | Résultat | Remarque |
 |---|---|---|---|---|
-| Achat 24/08 | Ex1–2 | 10:40 | ≈ +0.7R (TP ramené à ~159.162) | — |
-| Achat 25/08 | Ex3–4 | 12:10 | −1R | Entrée juste avant les stats US |
-| Vente 26/08 | Ex5 | ~13:30 | ? (pas de capture de résultat) | Contre un Sell to Buy très fort sur news |
-| Vente 04/09 | Ex6–7 | 10:10 | ≈ +1.1R (TP ramené avant les NFP) | — |
-| Vente 08/09 | Ex8–9 | 08:05 | −1R | Sous un IPA H1 ouvert |
-| Vente 16/09 | Ex10–11 | 13:05 | −1R | Contre le biais HTF, avant le FOMC |
-| Achat 17/09 | Ex12–13 | 12:35 | ≈ +6.5R | — |
-| Vente 22/09 | Ex14–15 | 09:15 | ≈ +4R | — |
-| Achat 24/09 | Ex16–17 | 07:55 | ≈ +3.6R (TP ramené à ~158.70) | — |
-| Vente 25/09 | Ex18–19 | 08:28 | ≈ +4.7R | — |
+| Achat 24/08 | Ex1–2 | 10:40 | ✅ Sortie légèrement positive | Breakeven protégé, sortie un peu au-dessus |
+| Achat 25/08 | Ex3–4 | 12:10 | ❌ SL | Entrée juste avant les stats US |
+| Vente 26/08 | Ex5 | ~13:30 | ❌ SL | **Hors plan** : décision prise sous le coup de l'émotion |
+| Vente 04/09 | Ex6–7 | 10:10 | ✅ ≈ +1.xR | Sortie positive |
+| Vente 08/09 | Ex8–9 | 08:05 | ❌ SL | Zone de liquidité non tracée (mouvement trop rapide) |
+| Vente 16/09 | Ex10–11 | 13:05 | ❌ SL | Contre le biais HTF, avant le FOMC |
+| Achat 17/09 | Ex12–13 | 12:35 | ✅ TP ≈ +6.5R | Position gardée la nuit, volontairement |
+| Vente 22/09 | Ex14–15 | 09:15 | ✅ TP ≈ +4R | |
+| Achat 24/09 | Ex16–17 | 07:55 | ✅ Profit (TP non atteint) | |
+| Vente 25/09 | Ex18–19 | 08:28 | ✅ TP ≈ +4.7R | |
 
-Sur les 9 trades au résultat connu : **6 gagnants, 3 perdants, environ +17.6R**. Chaque perte a un défaut que la formation interdit. L'échantillon est beaucoup trop petit pour conclure, mais la direction est claire.
+**10 trades : 6 gagnants, 4 SL (60 %).** Les trois TP complets rapportent à eux seuls ≈ +15R, contre −4R pour les pertes. Sur les 4 pertes, une est **hors plan** (émotion) et les trois autres ont un défaut identifiable a posteriori.
+
+Convention visuelle : quand le SL est touché, la zone rouge de l'outil de position apparaît plus marquée. Les flèches en pointillés sont un artefact de l'outil de position TradingView, sans signification.
 
 ### Tes deux modèles
 **Modèle A · Balayage et reprise** (9 trades sur 10)
@@ -267,13 +269,16 @@ Piste à vérifier sur beaucoup plus de données : **Londres te réussit mieux q
 | Rouge | Liquidité : equal highs ou lows, extrêmes locaux |
 | Bleu | Point de structure ou IPA (parfois annoté « IPA H1 », « IPA 15 ») |
 | Blanc | Plus haut ou plus bas d'une session précédente |
-| Jaune | Niveau clé : prix d'entrée ou objectif |
+| Jaune | **Objectif** (confirmé) |
 | Rectangle | Range d'accumulation de la session |
 
 ## Règles confirmées par le trader (après le lot 4)
 
 1. **Prise de liquidité = clôture du corps**, pas la mèche. Sur M1, M3 ou M5, un niveau n'est considéré comme pris que si **le corps d'une bougie clôture au-delà**. Une simple mèche ne compte pas.
 2. **« Flagrant »** : après une petite accumulation, une **accélération vers la liquidité anormalement grande par rapport au mouvement qui précède dans la zone**. À coder comme un ratio : amplitude ou vitesse des bougies de manipulation comparée à celle des N bougies de l'accumulation. Seuil à calibrer sur les exemples.
-3. **Code couleur** : rouge = liquidité · bleu = IPA · blanc = niveaux extrêmes (plus hauts ou plus bas de sessions précédentes). Jaune : à confirmer.
+3. **Code couleur** : rouge = liquidité · bleu = IPA · blanc = niveaux extrêmes (plus hauts ou plus bas de sessions précédentes). **Jaune = objectif** (niveau visé).
 4. **Le TP n'est jamais déplacé.** Les positions dont la zone verte semble raccourcie (Ex2, Ex7, Ex17) sont en réalité des **sorties à breakeven** : le trader redessine l'outil de position jusqu'au niveau de sortie. → Les résultats « TP ramené » du bilan sont à reclasser en **0R (BE)** après confirmation.
 5. **Règle du breakeven** : avant de prendre la liquidité, le prix forme de petits points de structure internes (petits highs en descente vers des lows, petits lows en montée vers des highs). Après l'entrée, **dès que le prix casse le dernier de ces points (BOS interne), le SL passe à l'entrée**. Le compagnon de position doit détecter ce point et prévenir : « BOS interne cassé : passe à BE ».
+6. **IPA touché = une mèche suffit.** Contrairement à la prise de liquidité (clôture du corps obligatoire), **un IPA est considéré comme touché dès qu'une mèche l'atteint**. Les deux sont souvent proches : en allant chercher la liquidité, le prix touche l'IPA avec une mèche.
+7. **Positions de nuit** : garder une position la nuit est un choix volontaire qui arrive parfois. Le compagnon de position doit gérer ce cas normalement.
+8. **Trades hors plan** : le journal doit permettre de marquer un trade « hors plan / émotion » (Ex5), pour que les statistiques de la stratégie ne soient pas faussées et que le coach discipline puisse les suivre.
