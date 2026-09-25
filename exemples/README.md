@@ -166,6 +166,45 @@ Statut d'une lecture : `à valider` tant que le trader ne l'a pas confirmée.
 
 ---
 
+## Lot 4
+
+### Ex16 · 24/09/2026 · M1 · achat (`lot-4/ex16.png`)
+| Élément | Lecture |
+|---|---|
+| Contexte | Tokyo monte de 157.80 à **158.489** (~06:45 UTC). Equal highs vers **158.455** (ligne blanche) |
+| Liquidité | Ligne rouge **~158.165** (low de 06:00 UTC) · ligne bleue **~158.10** (plus haut de Tokyo vers 03:40 UTC, ancien point de structure) |
+| Manipulation | 07:35–07:50 UTC, **dans la fenêtre de Londres de la formation** (9h–10h Paris) : chute jusqu'à ~158.07, qui balaie 158.165 et 158.10. **Sell to Buy** |
+| Entrée | Achat ~158.19 vers 07:55 UTC, à la reprise de 158.165 |
+| SL / TP | SL ~158.05 · TP initial **158.966** (ligne jaune), ≈5.5R |
+| Statut | à valider |
+
+### Ex17 · 24/09/2026 · M1 · suite d'Ex16 (`lot-4/ex17.png`)
+| Élément | Lecture |
+|---|---|
+| Déroulé | Montée à travers 158.455 et 158.495 jusqu'à **158.802** vers 10:05 UTC, puis range sous des equal highs (rectangles jaunes 158.73–158.80) et baisse vers 11:15 UTC |
+| Position affichée | La zone verte s'arrête vers **~158.70** : TP apparemment ramené de 158.966 à ~158.70 |
+| Résultat probable | **TP touché, environ +3.6R** |
+| Statut | à valider |
+
+### Ex18 · 25/09/2026 · M1 · vente (`lot-4/ex18.png`)
+| Élément | Lecture |
+|---|---|
+| Contexte | Tokyo chute de ~158.47 à **157.949** (~06:20 UTC). Londres range au-dessus de ce plus bas |
+| Liquidité | Au-dessus : rouge **158.165** (plus haut de 06:30) · bleue **~158.19** · rouge **~158.28** (plus haut de 06:00) · bleue **~158.29** (low de 04:10, ancien point de structure) |
+| Manipulation | 07:45–08:27 UTC : montée qui prend tous ces niveaux jusqu'à ~158.30, puis rejet. **Buy to Sell** |
+| Entrée | Vente ~158.255 vers 08:28 UTC |
+| SL / TP | SL ~158.32 · TP **~157.95** (plus bas de Tokyo et de Londres), ≈4.7R. Ligne blanche plus bas à **157.794** |
+| Statut | à valider |
+
+### Ex19 · 25/09/2026 · M1 · suite d'Ex18 (`lot-4/ex19.png`)
+| Élément | Lecture |
+|---|---|
+| Déroulé | Descente régulière (flèche en pointillés) jusqu'à **157.926** à 09:08 UTC |
+| Résultat probable | **TP touché, environ +4.7R**, en ~40 minutes |
+| Statut | à valider |
+
+---
+
 ## Premiers constats (lot 1)
 
 1. **Tes entrées se font surtout entre 10:00 et 13:00 UTC** (11h–14h Bénin). C'est après la fenêtre de Londres de la formation (07:00–08:00 UTC) et avant ou pendant les stats US. L'outil doit mesurer **tes** fenêtres réelles, pas seulement celles de la formation.
@@ -186,14 +225,48 @@ Statut d'une lecture : `à valider` tant que le trader ne l'a pas confirmée.
 10. **Tu tiens parfois une position la nuit** (Ex13 : ~15 h, gain réalisé pendant Tokyo). Le compagnon de position doit couvrir la nuit : annonces japonaises, fixing de Tokyo, swap.
 11. **Tu prends aussi des continuations après un mouvement violent** (Ex14→15) : retour dans le déséquilibre, puis reprise du mouvement. Ce modèle n'est pas décrit tel quel dans la formation. Il faut le définir avec toi pour le coder (voir la question d'Ex14).
 
-## Bilan provisoire (15 captures, 8 trades)
-| Trade | Captures | Résultat probable |
-|---|---|---|
-| Achat 24/08 | Ex1–2 | ? (TP manqué de 0.2 pip) |
-| Achat 25/08 | Ex3–4 | −1R |
-| Vente 26/08 | Ex5 | ? |
-| Vente 04/09 | Ex6–7 | ≈ +1.1R (TP ramené avant les NFP) |
-| Vente 08/09 | Ex8–9 | −1R |
-| Vente 16/09 | Ex10–11 | −1R |
-| Achat 17/09 | Ex12–13 | ≈ +6.5R |
-| Vente 22/09 | Ex14–15 | ≈ +4R |
+## Synthèse des 19 captures (10 trades)
+
+Les captures vont **par paires : l'entrée, puis le résultat** (précision du trader). Seule Ex5 n'a pas de capture de résultat.
+
+### Bilan provisoire
+| Trade | Captures | Entrée (UTC) | Résultat probable | Défaut identifié |
+|---|---|---|---|---|
+| Achat 24/08 | Ex1–2 | 10:40 | ≈ +0.7R (TP ramené à ~159.162) | — |
+| Achat 25/08 | Ex3–4 | 12:10 | −1R | Entrée juste avant les stats US |
+| Vente 26/08 | Ex5 | ~13:30 | ? (pas de capture de résultat) | Contre un Sell to Buy très fort sur news |
+| Vente 04/09 | Ex6–7 | 10:10 | ≈ +1.1R (TP ramené avant les NFP) | — |
+| Vente 08/09 | Ex8–9 | 08:05 | −1R | Sous un IPA H1 ouvert |
+| Vente 16/09 | Ex10–11 | 13:05 | −1R | Contre le biais HTF, avant le FOMC |
+| Achat 17/09 | Ex12–13 | 12:35 | ≈ +6.5R | — |
+| Vente 22/09 | Ex14–15 | 09:15 | ≈ +4R | — |
+| Achat 24/09 | Ex16–17 | 07:55 | ≈ +3.6R (TP ramené à ~158.70) | — |
+| Vente 25/09 | Ex18–19 | 08:28 | ≈ +4.7R | — |
+
+Sur les 9 trades au résultat connu : **6 gagnants, 3 perdants, environ +17.6R**. Chaque perte a un défaut que la formation interdit. L'échantillon est beaucoup trop petit pour conclure, mais la direction est claire.
+
+### Tes deux modèles
+**Modèle A · Balayage et reprise** (9 trades sur 10)
+1. Un niveau de liquidité évident : extrême du range de la session, equal highs ou lows, ancien point de structure, extrême d'une session précédente.
+2. Le prix le prend avec une accélération nette : **Sell to Buy ou Buy to Sell**.
+3. **Entrée à la reprise du niveau**, le plus souvent en M1 (parfois M3 ou M5).
+4. SL juste derrière la mèche de manipulation.
+5. TP sur l'extrême opposé : plus bas ou plus haut de Tokyo, de Londres ou de la veille. RR visé : 3 à 6R, souvent ramené en cours de route.
+
+**Modèle B · Continuation après déplacement** (Ex14)
+Mouvement violent, retour dans le déséquilibre laissé, entrée dans le sens du mouvement. À définir avec le trader.
+
+### Tes horaires réels
+- **07:55 – 10:40 UTC** (Londres, 8h55–11h40 au Bénin) : 6 trades, **5 gagnants, 1 perdant** ;
+- **12:10 – 13:30 UTC** (ouverture de NY, 13h10–14h30 au Bénin) : 4 trades, 1 gagnant, 2 perdants, 1 inconnu.
+
+Piste à vérifier sur beaucoup plus de données : **Londres te réussit mieux que New York**, ce qui va dans le sens d'un passage à Asie + Londres.
+
+### Ton code couleur (à confirmer)
+| Couleur | Ce que j'en déduis |
+|---|---|
+| Rouge | Liquidité : equal highs ou lows, extrêmes locaux |
+| Bleu | Point de structure ou IPA (parfois annoté « IPA H1 », « IPA 15 ») |
+| Blanc | Plus haut ou plus bas d'une session précédente |
+| Jaune | Niveau clé : prix d'entrée ou objectif |
+| Rectangle | Range d'accumulation de la session |
