@@ -1,0 +1,774 @@
+<title>Hellofedge USD/JPY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<style>
+:root{
+  color-scheme: dark;
+  --ink:#0C111C;        /* fond : encre indigo */
+  --panel:#121A29;
+  --panel-2:#172136;
+  --line:#22304A;
+  --line-soft:#1B263B;
+  --text:#E4E8F1;
+  --muted:#8A95AD;
+  --faint:#5B6782;
+  --ai:#8FA8FF;         /* accent : indigo clair (ai-zome) */
+  --ai-soft:rgba(143,168,255,.14);
+  --bull:#3DBFA3;
+  --bull-soft:rgba(61,191,163,.14);
+  --bear:#E5705E;
+  --bear-soft:rgba(229,112,94,.14);
+  --warn:#E3AE4B;
+  --warn-soft:rgba(227,174,75,.15);
+  --s-asia:#7B6CF0;
+  --s-fra:#A56A8C;
+  --s-lon:#3F8FD1;
+  --s-trap:#6B7489;
+  --s-ny:#D98C3E;
+  --s-lc:#4FA58A;
+  --display:"Zen Kaku Gothic New","Hiragino Sans","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{background:var(--ink)}
+body{color:var(--text);font-family:var(--body);font-size:14px;line-height:1.45;padding-inline:clamp(16px,2.2vw,28px);padding-block:0 40px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ai);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.label{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;font-weight:700}
+h2{font-size:15px;letter-spacing:.02em}
+
+/* ---------- barre du haut ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:linear-gradient(var(--ink) 80%,rgba(12,17,28,0));padding-block:14px 10px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 22px}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.seal{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:var(--ai-soft);border:1px solid rgba(143,168,255,.35);font-family:var(--display);font-weight:700;color:var(--ai);font-size:18px}
+.brand h1{font-size:18px;letter-spacing:.01em}
+.brand .sub{font-size:12px;color:var(--muted)}
+.price{display:flex;align-items:baseline;gap:10px}
+.price .px{font-family:var(--mono);font-size:22px;font-weight:600}
+.price .chg{font-family:var(--mono);font-size:12px;color:var(--bull)}
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bull);box-shadow:0 0 0 3px var(--bull-soft)}
+.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:3px;flex-wrap:wrap}
+.tab{background:none;border:0;padding:7px 12px;border-radius:7px;cursor:pointer;color:var(--muted);font-weight:500;font-size:13px}
+.tab[aria-selected="true"]{background:var(--panel-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.tab:hover{color:var(--text)}
+.proto{font-size:11px;color:var(--warn);background:var(--warn-soft);border-radius:999px;padding:3px 9px;font-weight:600;letter-spacing:.02em}
+
+/* ---------- ruban des sessions ---------- */
+.ribbon{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px 10px;margin-bottom:14px}
+.ribbon-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;align-items:baseline;margin-bottom:10px}
+.ribbon-head .now{font-family:var(--mono);font-size:13px}
+.ribbon-head .now b{color:var(--ai);font-weight:600}
+.track-wrap{overflow-x:auto}
+.track{position:relative;height:54px;min-width:640px}
+.track .band{position:absolute;top:6px;height:26px;border-radius:5px;font-size:11px;font-weight:600;padding:5px 7px;white-space:nowrap;overflow:hidden;color:#0C111C}
+.track .win{position:absolute;top:2px;height:34px;border-radius:6px;border:1.5px dashed var(--text);opacity:.8}
+.track .fix{position:absolute;top:0;height:38px;width:2px;background:var(--warn)}
+.track .fix span{position:absolute;top:-2px;left:5px;font-size:10px;color:var(--warn);white-space:nowrap;font-weight:600}
+.track .nowline{position:absolute;top:-2px;height:44px;width:2px;background:var(--ai);box-shadow:0 0 8px var(--ai)}
+.track .ticks{position:absolute;left:0;right:0;top:40px;height:14px}
+.track .ticks span:first-child{transform:none}
+.track .ticks span:last-child{transform:translateX(-100%)}
+.track .ticks span{position:absolute;font-family:var(--mono);font-size:10px;color:var(--faint);transform:translateX(-50%)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:10px;border:1.5px dashed var(--text);border-radius:3px;vertical-align:-1px;margin-right:5px}
+
+/* ---------- bandeau macro ---------- */
+.macro{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.m{background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.m .v{font-family:var(--mono);font-size:16px;font-weight:600}
+.m .d{font-size:11.5px;color:var(--muted)}
+.m .up{color:var(--bull)} .m .dn{color:var(--bear)}
+.gauge{display:flex;gap:3px;margin-top:3px}
+.gauge span{flex:1;height:6px;border-radius:2px;background:var(--line)}
+.gauge span.on{background:var(--warn)}
+.gauge span.on.hot{background:var(--bear)}
+
+/* ---------- grille cockpit ---------- */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;align-items:start}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.card-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;border:1px solid var(--line);color:var(--muted);background:var(--panel-2)}
+.chip.bull{color:var(--bull);border-color:rgba(61,191,163,.4);background:var(--bull-soft)}
+.chip.bear{color:var(--bear);border-color:rgba(229,112,94,.4);background:var(--bear-soft)}
+.chip.warn{color:var(--warn);border-color:rgba(227,174,75,.4);background:var(--warn-soft)}
+.chip.ai{color:var(--ai);border-color:rgba(143,168,255,.4);background:var(--ai-soft)}
+
+/* graphique */
+.tfs{display:flex;gap:2px;background:var(--ink);border:1px solid var(--line);border-radius:7px;padding:2px}
+.tf{background:none;border:0;font-family:var(--mono);font-size:12px;padding:4px 8px;border-radius:5px;color:var(--muted);cursor:pointer}
+.tf[aria-pressed="true"]{background:var(--ai-soft);color:var(--ai)}
+.layers{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.layer{font-size:12px;background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 9px;cursor:pointer;color:var(--faint)}
+.layer[aria-pressed="true"]{color:var(--text);border-color:var(--faint)}
+.layer b{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:0}
+.chart-box{position:relative;width:100%;aspect-ratio:16/9;min-height:300px;max-width:100%;background:var(--ink);border:1px solid var(--line-soft);border-radius:8px;overflow:hidden}
+.chart-box canvas{position:absolute;inset:0;width:100%;height:100%}
+.chart-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--muted)}
+
+/* boussole */
+.bias{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.bias-dial{width:92px;height:92px}
+.bias-txt .big{font-family:var(--display);font-size:22px;font-weight:700;color:var(--bull)}
+.split{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:8px 0 4px;background:var(--line)}
+.split span:first-child{background:var(--ai)} .split span:last-child{background:#5B78C9}
+.split-l{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+.reasons{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.reasons li{display:grid;grid-template-columns:46px 1fr;gap:8px;align-items:start}
+.reasons .tfb{font-family:var(--mono);font-size:11px;color:var(--ai);background:var(--ai-soft);border-radius:4px;text-align:center;padding:1px 0}
+.scen{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.sc{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--panel-2);font-size:12.5px;display:flex;flex-direction:column;gap:5px}
+.sc.main{border-color:rgba(61,191,163,.45)}
+.sc h3{font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.sc .inv{color:var(--muted)}
+.prob{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* radar de configuration */
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.step{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:start;padding:7px 0;position:relative}
+.step:not(:last-child)::after{content:"";position:absolute;left:10px;top:28px;bottom:-6px;width:2px;background:var(--line)}
+.step.ok:not(:last-child)::after{background:rgba(61,191,163,.5)}
+.st-ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;border:2px solid var(--line);color:var(--faint);background:var(--panel);z-index:1}
+.step.ok .st-ic{border-color:var(--bull);background:var(--bull);color:var(--ink)}
+.step.wait .st-ic{border-color:var(--warn);color:var(--warn);animation:pulse 1.6s ease-in-out infinite}
+.step .t{font-size:13px;font-weight:500}
+.step .s{font-size:11.5px;color:var(--muted)}
+.step .tfm{font-family:var(--mono);font-size:11px;color:var(--faint)}
+@keyframes pulse{50%{box-shadow:0 0 0 5px var(--warn-soft)}}
+@media (prefers-reduced-motion:reduce){.step.wait .st-ic{animation:none}}
+
+/* fiche d'entrée */
+.ticket{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.ticket div{background:var(--panel-2);padding:9px 10px}
+.ticket .k{font-size:11px;color:var(--muted)}
+.ticket .v{font-family:var(--mono);font-size:14px;font-weight:600}
+.ticket .full{grid-column:1/-1}
+.v.bull{color:var(--bull)} .v.bear{color:var(--bear)}
+.btn{border:1px solid var(--line);background:var(--panel-2);border-radius:7px;padding:8px 12px;font-size:13px;font-weight:500;cursor:pointer}
+.btn:hover{border-color:var(--faint)}
+.btn.primary{background:var(--ai);color:var(--ink);border-color:var(--ai);font-weight:600}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.note{font-size:11.5px;color:var(--muted);margin-top:10px}
+
+/* tableaux */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.why{color:var(--muted);font-size:12px}
+.pill{font-size:11px;font-weight:600;border-radius:4px;padding:1px 7px;white-space:nowrap}
+.pill.ok{background:var(--bull-soft);color:var(--bull)}
+.pill.trap{background:var(--bear-soft);color:var(--bear)}
+.pill.taken{background:var(--line);color:var(--muted)}
+.pill.open{background:var(--ai-soft);color:var(--ai)}
+
+/* matrice IPA/EPA */
+.ipa{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.ipa .c{border:1px solid var(--line);border-radius:8px;padding:9px 8px;background:var(--panel-2);display:flex;flex-direction:column;gap:4px;min-width:0}
+.ipa .tfn{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.ipa .stt{font-family:var(--display);font-size:16px;font-weight:700}
+.ipa .c.ipa-up{border-color:rgba(61,191,163,.5)} .ipa .c.ipa-up .stt{color:var(--bull)}
+.ipa .c.ipa-dn{border-color:rgba(229,112,94,.5)} .ipa .c.ipa-dn .stt{color:var(--bear)}
+.ipa .c.epa .stt{color:var(--muted)}
+.ipa .z{font-family:var(--mono);font-size:11px;color:var(--text)}
+.ipa .f{font-size:10.5px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* agenda */
+.agenda{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ag{display:grid;grid-template-columns:48px 8px 1fr;gap:10px;align-items:start;padding:7px 0;border-bottom:1px solid var(--line-soft)}
+.ag:last-child{border-bottom:0}
+.ag .h{font-family:var(--mono);font-size:12.5px}
+.ag .imp{width:8px;height:8px;border-radius:50%;margin-top:5px}
+.imp.hi{background:var(--bear)} .imp.md{background:var(--warn)} .imp.lo{background:var(--faint)}
+.ag .n{font-size:12.5px}
+.ag .x{font-size:11.5px;color:var(--muted)}
+.ag.past{opacity:.5}
+
+/* feedback */
+.fb{display:flex;flex-wrap:wrap;gap:6px}
+.fbb{font-size:12px;border:1px solid var(--line);background:var(--panel-2);border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--muted)}
+.fbb[aria-pressed="true"]{color:var(--ink);background:var(--ai);border-color:var(--ai)}
+
+/* fiches */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.fiche{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column}
+.fiche .stripe{height:3px}
+.fiche .in{padding:12px 14px;display:flex;flex-direction:column;gap:8px;flex:1}
+.fiche .row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.fiche .meta{font-size:12px;color:var(--muted)}
+.fiche .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;color:var(--muted)}
+.fiche .kv b{display:block;font-family:var(--mono);font-size:13px;color:var(--text);font-weight:600}
+.conf{display:flex;flex-wrap:wrap;gap:4px}
+.conf span{font-size:10.5px;border-radius:4px;padding:1px 6px;background:var(--panel-2);border:1px solid var(--line);color:var(--muted)}
+.grade{font-family:var(--display);font-weight:700;font-size:15px;width:32px;height:32px;border-radius:7px;display:grid;place-items:center}
+.grade.a{background:var(--bull-soft);color:var(--bull)} .grade.b{background:var(--warn-soft);color:var(--warn)}
+.res{font-family:var(--mono);font-weight:600}
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
+
+/* journal */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.kpi .v{font-family:var(--mono);font-size:22px;font-weight:600;margin-top:4px}
+.kpi .d{font-size:11.5px;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:grid;grid-template-columns:130px 1fr 64px;gap:10px;align-items:center;font-size:12.5px}
+.bar .tr{height:10px;background:var(--line);border-radius:3px;position:relative;overflow:hidden}
+.bar .tr span{position:absolute;inset:0 auto 0 0;border-radius:3px}
+.bar .val{font-family:var(--mono);text-align:right}
+.prop{border:1px solid var(--line);border-radius:8px;padding:11px 12px;background:var(--panel-2);display:flex;flex-direction:column;gap:6px}
+.prop .p-h{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+.prop p{margin:0;font-size:12.5px;color:var(--muted)}
+.props{display:flex;flex-direction:column;gap:10px}
+.done{font-size:12px;font-weight:600}
+
+/* recherche */
+.heat{display:grid;gap:3px;font-size:10.5px}
+.heat .hc{height:24px;border-radius:3px}
+.heat .hl{font-family:var(--mono);color:var(--faint);display:flex;align-items:center}
+.heat .ht{font-family:var(--mono);color:var(--faint);text-align:center}
+.scale{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-top:10px}
+.scale span{width:120px;height:8px;border-radius:3px;background:linear-gradient(90deg,#172136,#3F5BA8,#8FA8FF)}
+.find{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+.find li{display:grid;grid-template-columns:auto 1fr;gap:10px;font-size:13px}
+
+.view[hidden]{display:none!important}
+
+@media (max-width:1100px){.grid{grid-template-columns:1fr}.two{grid-template-columns:1fr}}
+@media (max-width:620px){
+  .ipa{grid-template-columns:repeat(2,1fr)}
+  .bar{grid-template-columns:100px 1fr 54px}
+  .top{position:static}
+  .chart-box{aspect-ratio:4/5}
+}
+</style>
+
+<header class="top">
+  <div class="brand">
+    <div class="seal" aria-hidden="true">¥</div>
+    <div>
+      <h1>Hellofedge · USD/JPY</h1>
+      <div class="sub">Cockpit de trading · heure du Bénin (UTC+1)</div>
+    </div>
+  </div>
+  <div class="price" aria-label="Prix USD/JPY d'exemple">
+    <span class="px mono" id="px">147.584</span>
+    <span class="chg">+0.31 %</span>
+    <span class="live"><span class="dot"></span>Flux OANDA</span>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" aria-selected="true" data-view="cockpit" id="tab-cockpit">Cockpit</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="fiches" id="tab-fiches">Fiches de trade</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="journal" id="tab-journal">Journal &amp; apprentissage</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="recherche" id="tab-recherche">Étude des sessions</button>
+  </nav>
+  <span class="proto">Prototype · données d'exemple</span>
+</header>
+
+<!-- ruban des sessions, commun à toutes les vues -->
+<section class="ribbon" aria-label="Horloge des sessions">
+  <div class="ribbon-head">
+    <div class="label">Horloge des sessions · 24 h, heure du Bénin</div>
+    <div class="now mono">Il est <b id="clock">--:--</b> · <span id="sess-now">—</span> · <span id="sess-next" style="color:var(--muted)">—</span></div>
+  </div>
+  <div class="track-wrap"><div class="track" id="track"></div></div>
+  <div class="legend">
+    <span><i></i>Fenêtre de setup</span>
+    <span style="color:var(--warn)">▍ Fixing de Tokyo (9h55 à Tokyo)</span>
+    <span style="color:var(--ai)">▍ Maintenant</span>
+    <span id="gotobi-note"></span>
+  </div>
+</section>
+
+<!-- ======================= COCKPIT ======================= -->
+<main class="view" id="view-cockpit">
+  <section class="macro" aria-label="Radar macro">
+    <div class="m"><span class="label">Fed · taux</span><span class="v">4.25 %</span><span class="d">Prochain FOMC : 28 oct.</span></div>
+    <div class="m"><span class="label">BoJ · taux</span><span class="v">0.50 %</span><span class="d">Prochaine réunion : 30 oct.</span></div>
+    <div class="m"><span class="label">Écart 2 ans US–JP</span><span class="v">3.21 pts</span><span class="d"><span class="up">▲ +4 pb</span> sur 24 h · soutient USD</span></div>
+    <div class="m"><span class="label">CPI US / CPI Japon</span><span class="v">2.9 % · 2.7 %</span><span class="d">Sur un an</span></div>
+    <div class="m"><span class="label">Risque d'intervention MoF</span><span class="v">2 / 5</span>
+      <div class="gauge" aria-hidden="true"><span class="on"></span><span class="on"></span><span></span><span></span><span></span></div>
+      <span class="d">Ton : « on surveille les marchés »</span></div>
+    <div class="m"><span class="label">Sentiment de risque</span><span class="v up">Risk-on</span><span class="d">Nikkei +0.8 % · VIX 15.2</span></div>
+  </section>
+
+  <div class="grid">
+    <div class="col">
+      <!-- graphique -->
+      <section class="card" aria-label="Graphique USD/JPY">
+        <div class="card-h">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h2>Graphique USD/JPY</h2>
+            <span class="chip ai" id="tfchip">M5 · relecture de la session de Londres</span>
+          </div>
+          <div class="tfs" role="group" aria-label="Unité de temps">
+            <button class="tf" data-tf="D1" aria-pressed="false">D1</button>
+            <button class="tf" data-tf="H4" aria-pressed="false">H4</button>
+            <button class="tf" data-tf="H1" aria-pressed="false">H1</button>
+            <button class="tf" data-tf="M15" aria-pressed="false">M15</button>
+            <button class="tf" data-tf="M5" aria-pressed="true">M5</button>
+            <button class="tf" data-tf="M3" aria-pressed="false">M3</button>
+            <button class="tf" data-tf="M1" aria-pressed="false">M1</button>
+          </div>
+        </div>
+        <div class="layers" role="group" aria-label="Couches affichées">
+          <button class="layer" data-layer="sessions" aria-pressed="true"><b style="background:var(--s-lon)"></b>Sessions</button>
+          <button class="layer" data-layer="liq" aria-pressed="true"><b style="background:var(--warn)"></b>Liquidités</button>
+          <button class="layer" data-layer="ipa" aria-pressed="true"><b style="background:var(--ai)"></b>IPA / EPA</button>
+          <button class="layer" data-layer="fvg" aria-pressed="true"><b style="background:var(--bull)"></b>FVG / IFVG</button>
+          <button class="layer" data-layer="struct" aria-pressed="true"><b style="background:var(--text)"></b>Structure</button>
+          <button class="layer" data-layer="trade" aria-pressed="true"><b style="background:var(--bear)"></b>Setup</button>
+        </div>
+        <div class="chart-box"><canvas id="chart" aria-label="Chandeliers USD/JPY M5 avec niveaux SMC annotés" role="img"></canvas></div>
+        <div class="chart-foot">
+          <span>Cycle en cours : <b style="color:var(--text)">cause ASL + EQL prise (S/B 8h20) → effet haussier → prochaine cause : fake BOS 147.44</b></span>
+          <span class="mono">Mis à jour 09:40:12</span>
+        </div>
+      </section>
+
+      <div class="two">
+        <!-- IPA / EPA -->
+        <section class="card" aria-label="Matrice IPA / EPA">
+          <div class="card-h"><h2>IPA / EPA par unité de temps</h2><span class="chip ai">70 % du biais</span></div>
+          <div class="ipa">
+            <div class="c epa"><span class="tfn">W</span><span class="stt">EPA</span><span class="f">Structure comblée</span></div>
+            <div class="c ipa-up"><span class="tfn">D1</span><span class="stt">IPA ▲</span><span class="z">148.05–148.40</span><span class="f">FVG ✓ · non comblé</span></div>
+            <div class="c ipa-up"><span class="tfn">H4</span><span class="stt">IPA ▲</span><span class="z">147.72–147.90</span><span class="f">FVG ✓ · non comblé</span></div>
+            <div class="c ipa-up"><span class="tfn">H1</span><span class="stt">IPA ▲</span><span class="z">147.55–147.70</span><span class="f">FVG ✓ · en cours</span></div>
+            <div class="c epa"><span class="tfn">M15</span><span class="stt">EPA</span><span class="f">Continuation</span></div>
+          </div>
+          <p class="note">Le prix va souvent d'IPA en IPA. Prochain aimant : IPA H1, puis H4. Toute zone située juste sous un IPA non comblé est marquée TRAP.</p>
+        </section>
+
+        <!-- agenda -->
+        <section class="card" aria-label="Agenda du jour">
+          <div class="card-h"><h2>Agenda du jour</h2><span class="chip warn">2 fenêtres bloquées</span></div>
+          <ul class="agenda">
+            <li class="ag past"><span class="h">00:50</span><span class="imp md"></span><div><div class="n">🇯🇵 Tankan grandes entreprises</div><div class="x">Réel 14 · attendu 13 · publié</div></div></li>
+            <li class="ag past"><span class="h">01:55</span><span class="imp lo"></span><div><div class="n">Fixing de Tokyo · jour gotobi (25)</div><div class="x">Demande de dollars des importateurs</div></div></li>
+            <li class="ag"><span class="h">13:30</span><span class="imp hi"></span><div><div class="n">🇺🇸 PCE core m/m</div><div class="x">Attendu 0.2 % · précédent 0.3 % · bloque 13:15–13:45</div></div></li>
+            <li class="ag"><span class="h">15:00</span><span class="imp md"></span><div><div class="n">🇺🇸 Confiance du Michigan</div><div class="x">Attendu 55.4 · précédent 55.1</div></div></li>
+            <li class="ag"><span class="h">15:00</span><span class="imp lo"></span><div><div class="n">Expirations d'options (NY cut)</div><div class="x">148.00 : 1.2 Md$ · 147.50 : 850 M$</div></div></li>
+            <li class="ag"><span class="h">17:30</span><span class="imp hi"></span><div><div class="n">🇺🇸 Discours d'un membre du FOMC</div><div class="x">Thème : politique monétaire · bloque 17:15–17:45</div></div></li>
+          </ul>
+          <p class="note">Source et heure de mise à jour : calendrier économique, 09:38.</p>
+        </section>
+      </div>
+
+      <!-- carte des liquidités -->
+      <section class="card" aria-label="Carte des liquidités">
+        <div class="card-h"><h2>Carte des liquidités</h2><span class="chip">Chaque niveau : UT, statut et raison</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Niveau</th><th>UT</th><th>Type</th><th>Statut</th><th>Pourquoi</th></tr></thead>
+            <tbody>
+              <tr><td class="num">148.05</td><td class="num">D1</td><td>IPA D1 (bas)</td><td><span class="pill open">Cible HTF</span></td><td class="why">Cassure du 18/09 sans retour sur l'ancien point de structure · précédé d'un FVG</td></tr>
+              <tr><td class="num">147.72</td><td class="num">H4</td><td>PDH + IPA H4</td><td><span class="pill open">Intacte</span></td><td class="why">Plus haut d'hier, aligné avec l'IPA H4</td></tr>
+              <tr><td class="num">147.44</td><td class="num">M5</td><td>Fake BOS Francfort</td><td><span class="pill trap">TRAP</span></td><td class="why">Swing formé sans prise de liquidité, pendant Francfort · prochaine cause du cycle</td></tr>
+              <tr><td class="num">147.38</td><td class="num">M15</td><td>Asia High (ASH)</td><td><span class="pill taken">Prise 07:25</span></td><td class="why">Balayée par le fake BOS de Francfort</td></tr>
+              <tr><td class="num">147.13</td><td class="num">M5</td><td>Equal lows (3 touches)</td><td><span class="pill taken">Prise 08:20 · S/B</span></td><td class="why">Relative equal lows de l'Asie, balayés par un Sell to Buy net</td></tr>
+              <tr><td class="num">147.12</td><td class="num">M15</td><td>Asia Low (ASL)</td><td><span class="pill taken">Prise 08:20 · S/B</span></td><td class="why">Cause de la manipulation de Londres</td></tr>
+              <tr><td class="num">147.02</td><td class="num">M5</td><td>Strong Low</td><td><span class="pill ok">VALIDE</span></td><td class="why">Formé après la prise de liquidité · point de protection du long</td></tr>
+              <tr><td class="num">146.71</td><td class="num">H1</td><td>PDL</td><td><span class="pill open">Intacte</span></td><td class="why">Plus bas d'hier · liquidité côté vendeur</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- colonne droite -->
+    <div class="col">
+      <section class="card" aria-label="Boussole du jour">
+        <div class="card-h"><h2>Boussole du jour</h2><span class="chip">Analyse 07:30 · revue 09:40</span></div>
+        <div class="bias">
+          <svg class="bias-dial" viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#22304A" stroke-width="9"/>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="#3DBFA3" stroke-width="9" stroke-linecap="round" stroke-dasharray="180 252" transform="rotate(-90 50 50)"/>
+            <text x="50" y="47" text-anchor="middle" fill="#E4E8F1" font-family="JetBrains Mono,monospace" font-size="19" font-weight="600">72</text>
+            <text x="50" y="63" text-anchor="middle" fill="#8A95AD" font-family="IBM Plex Sans,sans-serif" font-size="9">confiance</text>
+          </svg>
+          <div class="bias-txt">
+            <div class="label">Biais HTF</div>
+            <div class="big">Haussier</div>
+            <div class="split" aria-hidden="true"><span style="width:70%"></span><span style="width:30%"></span></div>
+            <div class="split-l"><span>IPA/EPA 70 % · haussier</span><span>Liquidité 30 % · haussier</span></div>
+          </div>
+        </div>
+        <ul class="reasons">
+          <li><span class="tfb">D1</span><span>IPA non comblé à 148.05–148.40, précédé d'un FVG</span></li>
+          <li><span class="tfb">H4</span><span>Cause prise : PDL de mardi balayé, retour sur l'IPA H4 inférieur</span></li>
+          <li><span class="tfb">H1</span><span>Liquidité intacte au-dessus : PDH 147.72, EQH 147.88</span></li>
+          <li><span class="tfb">Macro</span><span>Écart de taux en hausse, risk-on · risque MoF faible (2/5)</span></li>
+        </ul>
+        <div class="scen">
+          <div class="sc main">
+            <h3><span style="color:var(--bull)">A · Continuation</span><span class="prob">principal</span></h3>
+            <div>S/B sous l'ASL à Londres (fait), puis entrée sur IFVG/CISD M5–M3. Cible : fake BOS 147.44, puis IPA H1.</div>
+            <div class="inv">Invalidation : clôture M15 sous 147.02</div>
+          </div>
+          <div class="sc">
+            <h3><span style="color:var(--bear)">B · Retournement</span><span class="prob">alternatif</span></h3>
+            <div>Si l'IPA H1 est comblé avec un B/S à NY 14h30 : vente vers l'ASL.</div>
+            <div class="inv">Uniquement après la prise de 147.72</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Radar de configuration">
+        <div class="card-h"><h2>Radar de configuration</h2><span class="chip bull">Setup conforme · A</span></div>
+        <ol class="steps">
+          <li class="step ok"><span class="st-ic">✓</span><div><div class="t">Biais HTF identifié</div><div class="s">Haussier · IPA D1/H4/H1 au-dessus</div></div><span class="tfm">D1→M15</span></li>
+          <li class="step ok"><span class="st-ic">✓</span><div><div class="t">Zone valide atteinte</div><div class="s">ASL + EQL, Strong Low à venir</div></div><span class="tfm">M15</span></li>
+          <li class="step ok"><span class="st-ic">✓</span><div><div class="t">Accumulation</div><div class="s">Asie 23h–6h + pièges de Francfort</div></div><span class="tfm">M5</span></li>
+          <li class="step ok"><span class="st-ic">✓</span><div><div class="t">Manipulation nette (S/B)</div><div class="s">Bougie de 2.4× l'ATR · 08:20, dans la fenêtre</div></div><span class="tfm">M5</span></li>
+          <li class="step ok"><span class="st-ic">✓</span><div><div class="t">Déclencheur</div><div class="s">CISD + IFVG (M5) · BPR en M3</div></div><span class="tfm">M5·M3</span></li>
+          <li class="step wait"><span class="st-ic">…</span><div><div class="t">Entrée avant la prochaine liquidité</div><div class="s">Fake BOS 147.44 pas encore pris · pas de retest</div></div><span class="tfm">en cours</span></li>
+        </ol>
+      </section>
+
+      <section class="card" aria-label="Fiche d'entrée">
+        <div class="card-h"><h2>Fiche d'entrée</h2><span class="chip bull">Prête · achat</span></div>
+        <div class="ticket">
+          <div><div class="k">Entrée (CISD, corps)</div><div class="v bull">147.188</div></div>
+          <div><div class="k">Stop (sous le S/B)</div><div class="v bear">146.985</div></div>
+          <div><div class="k">Breakeven dès</div><div class="v">147.30</div></div>
+          <div><div class="k">TP · 3R</div><div class="v bull">147.797</div></div>
+          <div><div class="k">Risque</div><div class="v">20.3 pips</div></div>
+          <div><div class="k">Taille (compte 5K, 0.5 %)</div><div class="v">0.18 lot</div></div>
+          <div class="full"><div class="k">Pourquoi 3R</div><div style="font-size:12.5px;margin-top:2px">Prochaine liquidité du cycle (147.44) à 1.2R, puis PDH/IPA H1 au-delà de 3R : TP à 3R, breakeven à la prise de 147.30.</div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="take">J'ai pris le trade</button>
+          <button class="btn" id="skip">Je ne le prends pas</button>
+        </div>
+        <p class="note" id="take-note">Hellofedge ne passe aucun ordre. Tu exécutes sur ta plateforme ; l'outil suit ensuite la position.</p>
+      </section>
+
+      <section class="card" aria-label="Retour rapide">
+        <div class="card-h"><h2>Ton retour sur cette analyse</h2><span class="chip">nourrit l'apprentissage</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><div class="label" style="margin-bottom:6px">Détections du graphique</div>
+            <div class="fb" data-group="det"><button class="fbb" aria-pressed="false">Justes</button><button class="fbb" aria-pressed="false">À corriger</button></div></div>
+          <div><div class="label" style="margin-bottom:6px">Biais du jour</div>
+            <div class="fb" data-group="bias"><button class="fbb" aria-pressed="false">D'accord</button><button class="fbb" aria-pressed="false">Pas d'accord</button></div></div>
+          <div><div class="label" style="margin-bottom:6px">Le setup</div>
+            <div class="fb" data-group="setup"><button class="fbb" aria-pressed="false">Propre</button><button class="fbb" aria-pressed="false">Moyen</button><button class="fbb" aria-pressed="false">Je ne l'aurais pas pris</button></div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<!-- ======================= FICHES ======================= -->
+<main class="view" id="view-fiches" hidden>
+  <div class="filter-bar">
+    <span class="label">Semaine du 21 au 25 sept.</span>
+    <span class="chip">7 setups détectés</span><span class="chip bull">3 pris</span><span class="chip">4 non pris</span>
+  </div>
+  <div class="cards" id="cards"></div>
+</main>
+
+<!-- ======================= JOURNAL ======================= -->
+<main class="view" id="view-journal" hidden>
+  <div class="kpis">
+    <div class="kpi"><div class="label">Trades pris · 30 j</div><div class="v">14</div><div class="d">dont 12 dans le plan</div></div>
+    <div class="kpi"><div class="label">Taux de réussite</div><div class="v" style="color:var(--bull)">64 %</div><div class="d">9 gagnants · 3 BE · 2 SL</div></div>
+    <div class="kpi"><div class="label">Résultat</div><div class="v" style="color:var(--bull)">+21.4 R</div><div class="d">espérance +1.53 R / trade</div></div>
+    <div class="kpi"><div class="label">Respect du plan</div><div class="v">86 %</div><div class="d">2 entrées sur retest</div></div>
+    <div class="kpi"><div class="label">Prop firm · compte 5K</div><div class="v">5 412 $</div><div class="d">Drawdown restant : 288 $ au-dessus du seuil</div></div>
+  </div>
+  <div class="two">
+    <section class="card">
+      <div class="card-h"><h2>Espérance par fenêtre (R / trade)</h2><span class="chip">setups détectés, pris ou non</span></div>
+      <div class="bars" id="bars-win"></div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Espérance par déclencheur</h2><span class="chip">USD/JPY · 90 j</span></div>
+      <div class="bars" id="bars-trig"></div>
+    </section>
+  </div>
+  <div class="two" style="margin-top:14px">
+    <section class="card">
+      <div class="card-h"><h2>Courbe de résultat</h2><span class="chip">en R cumulés</span></div>
+      <svg id="equity" viewBox="0 0 520 200" style="width:100%;height:auto" role="img" aria-label="Courbe de résultat cumulée en R"></svg>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Ajustements proposés</h2><span class="chip warn">3 en attente de ta validation</span></div>
+      <div class="props" id="props"></div>
+    </section>
+  </div>
+  <section class="card" style="margin-top:14px">
+    <div class="card-h"><h2>Journal des trades</h2><span class="chip">chaque trade relié à sa fiche</span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Date</th><th>Fenêtre</th><th>Sens</th><th>Déclencheur</th><th>Résultat</th><th>Plan</th><th>Émotion</th><th>Leçon</th></tr></thead>
+      <tbody>
+        <tr><td class="num">25/09 08:20</td><td>Londres</td><td style="color:var(--bull)">Achat</td><td>CISD + IFVG M5</td><td class="num" style="color:var(--bull)">en cours</td><td><span class="pill ok">Oui</span></td><td>Calme</td><td class="why">—</td></tr>
+        <tr><td class="num">24/09 13:34</td><td>NY 13h30</td><td style="color:var(--bear)">Vente</td><td>IFVG M3</td><td class="num" style="color:var(--bull)">+3.0 R</td><td><span class="pill ok">Oui</span></td><td>Confiant</td><td class="why">Manipulation sur les jobless claims, entrée avant la prise de l'EQL</td></tr>
+        <tr><td class="num">23/09 16:05</td><td>London Close</td><td style="color:var(--bull)">Achat</td><td>Petit BOS M1</td><td class="num" style="color:var(--bear)">−1.0 R</td><td><span class="pill trap">Non</span></td><td>Impatient</td><td class="why">Entrée sur retest après un cycle terminé</td></tr>
+        <tr><td class="num">22/09 08:15</td><td>Londres</td><td style="color:var(--bull)">Achat</td><td>BPR M5</td><td class="num">0.0 R</td><td><span class="pill ok">Oui</span></td><td>Neutre</td><td class="why">BE après la prise de la 1re liquidité, puis TP manqué de 3 pips</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+</main>
+
+<!-- ======================= RECHERCHE ======================= -->
+<main class="view" id="view-recherche" hidden>
+  <div class="two">
+    <section class="card">
+      <div class="card-h"><h2>Propreté des mouvements par heure et par jour</h2><span class="chip">USD/JPY · M5 · heure du Bénin</span></div>
+      <div class="tbl-wrap"><div class="heat" id="heat"></div></div>
+      <div class="scale"><span></span>Faible → forte · ratio mouvement directionnel / bruit</div>
+    </section>
+    <section class="card">
+      <div class="card-h"><h2>Ce que l'étude devra trancher</h2><span class="chip warn">à calculer sur l'historique réel</span></div>
+      <ul class="find">
+        <li><span class="chip ai">Asie</span><span>USD/JPY accumule-t-il vraiment en Asie, ou Tokyo porte-t-il de vraies tendances, surtout autour du fixing ?</span></li>
+        <li><span class="chip warn">Gotobi</span><span>Mouvement moyen de 23h à 1h55 (Bénin) les jours gotobi comparé aux autres jours, et le retournement après le fix.</span></li>
+        <li><span class="chip ai">Londres</span><span>Fréquence de la prise de l'ASH ou de l'ASL entre 8h et 9h, et suite du mouvement.</span></li>
+        <li><span class="chip ai">NY</span><span>Manipulation à 13h30 (stats US) comparée à 14h30 (ouverture de Wall Street) sur USD/JPY.</span></li>
+        <li><span class="chip bull">IPA/EPA</span><span>Taux de comblement des IPA par UT, et délai moyen avant comblement.</span></li>
+      </ul>
+      <p class="note">La carte de chaleur ci-contre est une illustration. Les vrais chiffres viendront du backtest sur plusieurs années de M1 OANDA.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+  const store={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+  /* ---------- onglets ---------- */
+  function show(view){
+    $$(".tab").forEach(t=>t.setAttribute("aria-selected",String(t.dataset.view===view)));
+    $$(".view").forEach(v=>v.hidden=v.id!=="view-"+view);
+    store.set("hf-tab",view);
+    if(view==="cockpit") drawChart();
+  }
+  $$(".tab").forEach(t=>t.addEventListener("click",()=>show(t.dataset.view)));
+
+  /* ---------- horloge et sessions (heure de Paris → Bénin) ---------- */
+  function tzOffsetMin(tz,d){
+    const p=new Intl.DateTimeFormat("en-US",{timeZone:tz,hourCycle:"h23",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).formatToParts(d);
+    const g=t=>+p.find(x=>x.type===t).value;
+    const asUTC=Date.UTC(g("year"),g("month")-1,g("day"),g("hour"),g("minute"));
+    return Math.round((asUTC-d.getTime())/60000);
+  }
+  const now=new Date();
+  const benin=60, paris=tzOffsetMin("Europe/Paris",now), ny=tzOffsetMin("America/New_York",now), tokyo=540;
+  const P=h=>((h*60 - (paris-benin))%1440+1440)%1440;      // heure de Paris → minutes Bénin
+  const NY=h=>((h*60 - (ny-benin))%1440+1440)%1440;        // heure de New York → minutes Bénin
+  const TK=h=>((h*60 - (tokyo-benin))%1440+1440)%1440;
+  const sessions=[
+    {n:"Asie",a:P(0),b:P(7),c:"var(--s-asia)"},
+    {n:"Francfort · piège",a:P(8),b:P(9),c:"var(--s-fra)"},
+    {n:"Londres",a:P(9),b:P(12),c:"var(--s-lon)"},
+    {n:"NY Trap",a:P(12),b:P(14),c:"var(--s-trap)"},
+    {n:"New York",a:NY(8.5),b:NY(12),c:"var(--s-ny)"},
+    {n:"London Close",a:P(17),b:P(20),c:"var(--s-lc)"}
+  ];
+  const windows=[{a:P(9),b:P(10)},{a:NY(8.5),b:NY(9)},{a:NY(9.5),b:NY(10)},{a:P(17),b:P(18)}];
+  const fix=TK(9+55/60);
+  const pct=m=>(m/1440*100)+"%";
+  const hm=m=>String(Math.floor(m/60)%24).padStart(2,"0")+":"+String(Math.round(m%60)).padStart(2,"0");
+  const track=$("#track");
+  function segs(s){return s.b>s.a?[[s.a,s.b]]:[[s.a,1440],[0,s.b]]}
+  sessions.forEach(s=>segs(s).forEach(([a,b],i)=>{
+    const el=document.createElement("div");el.className="band";
+    el.style.left=pct(a);el.style.width=pct(b-a);el.style.background=s.c;
+    el.textContent=i===0?s.n:"";el.title=s.n+" · "+hm(s.a)+"–"+hm(s.b);track.appendChild(el);
+  }));
+  windows.forEach(w=>{const el=document.createElement("div");el.className="win";el.style.left=pct(w.a);el.style.width=pct(w.b-w.a);el.title="Fenêtre "+hm(w.a)+"–"+hm(w.b);track.appendChild(el)});
+  const fx=document.createElement("div");fx.className="fix";fx.style.left=pct(fix);fx.innerHTML="<span>Fix "+hm(fix)+"</span>";track.appendChild(fx);
+  const nl=document.createElement("div");nl.className="nowline";track.appendChild(nl);
+  const ticks=document.createElement("div");ticks.className="ticks";
+  for(let h=0;h<=24;h+=3){const t=document.createElement("span");t.style.left=pct(h*60);t.textContent=String(h%24).padStart(2,"0")+"h";ticks.appendChild(t)}
+  track.appendChild(ticks);
+  function tick(){
+    const d=new Date(), m=((d.getUTCHours()*60+d.getUTCMinutes()+benin)%1440);
+    $("#clock").textContent=hm(m);nl.style.left=pct(m);
+    const inS=sessions.filter(s=>s.b>s.a?(m>=s.a&&m<s.b):(m>=s.a||m<s.b)).map(s=>s.n);
+    const inW=windows.some(w=>m>=w.a&&m<w.b);
+    $("#sess-now").textContent=(inS.length?inS.join(" + "):"Hors session")+(inW?" · fenêtre de setup active":"");
+    const starts=sessions.map(s=>({n:s.n,d:(s.a-m+1440)%1440})).filter(x=>x.d>0).sort((a,b)=>a.d-b.d)[0];
+    $("#sess-next").textContent="Prochaine : "+starts.n+" dans "+Math.floor(starts.d/60)+" h "+String(starts.d%60).padStart(2,"0");
+  }
+  tick();setInterval(tick,20000);
+  const day=new Date(Date.now()+benin*60000).getUTCDate();
+  const gotobi=[5,10,15,20,25,30].includes(day);
+  $("#gotobi-note").innerHTML=gotobi?'<b style="color:var(--warn)">Aujourd\'hui est un jour gotobi ('+day+')</b>':"Prochain gotobi : le "+([5,10,15,20,25,30].find(x=>x>day)||5);
+
+  /* ---------- graphique (données d'exemple scénarisées) ---------- */
+  let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+  // points de passage en barres M5 depuis 23:00 Bénin (= 00:00 Paris été)
+  const wp=[[0,147.22],[14,147.33],[26,147.17],[38,147.36],[50,147.14],[62,147.30],[74,147.135],[84,147.24],[96,147.22],[101,147.44],[106,147.26],[110,147.29],[112,147.06],[113,147.02],[114,147.17],[118,147.21],[122,147.34],[126,147.28],[132,147.42],[136,147.45],[140,147.50],[150,147.585]];
+  const N=151, cand=[];
+  let prev=wp[0][1];
+  for(let i=0;i<N;i++){
+    let k=0;while(k<wp.length-2&&wp[k+1][0]<=i)k++;
+    const [i0,p0]=wp[k],[i1,p1]=wp[k+1];
+    const t=i1===i0?1:(i-i0)/(i1-i0);
+    const target=p0+(p1-p0)*Math.min(1,t)+(rnd()-.5)*0.03;
+    const o=prev, c=target;
+    let hi=Math.max(o,c)+rnd()*0.025, lo=Math.min(o,c)-rnd()*0.025;
+    if(i===112){hi=Math.max(o,c)+0.006;lo=147.05}
+    if(i===113){lo=147.02}
+    if(i===101){hi=147.445}
+    if([29,50,74].includes(i)){lo=147.128+rnd()*0.004}
+    cand.push({o,h:hi,l:lo,c});prev=c;
+  }
+  // bougie de manipulation (S/B) : grosse bougie baissière
+  cand[112]={o:147.28,h:147.29,l:147.03,c:147.06};
+  cand[113]={o:147.06,h:147.12,l:147.02,c:147.10};
+  cand[114]={o:147.10,h:147.22,l:147.09,c:147.20};
+  cand[115]={o:147.20,h:147.24,l:147.16,c:147.19};
+  // FVG haussier 113-115 : high(113)=147.12 < low(115)=147.16
+  const layers=Object.fromEntries($$(".layer").map(b=>[b.dataset.layer,b.getAttribute("aria-pressed")==="true"]));
+  $$(".layer").forEach(b=>b.addEventListener("click",()=>{const v=b.getAttribute("aria-pressed")!=="true";b.setAttribute("aria-pressed",String(v));layers[b.dataset.layer]=v;drawChart()}));
+  $$(".tf").forEach(b=>b.addEventListener("click",()=>{$$(".tf").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));$("#tfchip").textContent=b.dataset.tf+" · exemple (seul le M5 est scénarisé)"}));
+
+  const cv=$("#chart");
+  function drawChart(){
+    const box=cv.parentElement, W=box.clientWidth, H=box.clientHeight; if(!W||!H) return;
+    const dpr=window.devicePixelRatio||1; cv.width=W*dpr; cv.height=H*dpr;
+    const g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+    const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const C={line:css("--line-soft"),text:css("--text"),muted:css("--muted"),faint:css("--faint"),bull:css("--bull"),bear:css("--bear"),warn:css("--warn"),ai:css("--ai"),asia:css("--s-asia"),fra:css("--s-fra"),lon:css("--s-lon")};
+    const narrow=W<560;
+    const padR=narrow?48:62, padB=22, padT=10, plotW=W-padR, plotH=H-padB-padT;
+    const start=narrow?60:0, bars=cand.slice(start), n=bars.length;
+    const pmin=146.96, pmax=147.84;
+    const x=i=>((i-start)+0.5)/(n+8)*plotW, y=p=>padT+(pmax-p)/(pmax-pmin)*plotH, bw=Math.max(2,plotW/(n+8)*0.62);
+    g.font="10px "+css("--mono");
+    // grille
+    g.strokeStyle=C.line;g.lineWidth=1;g.fillStyle=C.faint;g.textAlign="left";g.textBaseline="middle";
+    for(let p=147.0;p<=147.8;p+=0.1){const yy=Math.round(y(p))+.5;g.beginPath();g.moveTo(0,yy);g.lineTo(plotW,yy);g.stroke();g.fillText(p.toFixed(2),plotW+6,yy)}
+    g.textAlign="center";g.textBaseline="alphabetic";
+    for(let i=start;i<N;i+=12){const m=(23*60+i*5)%1440;g.fillText(hm(m),x(i),H-6)}
+    // sessions
+    if(layers.sessions){
+      [[0,84,C.asia,"Asie"],[96,108,C.fra,"Francfort"],[108,N,C.lon,"Londres"]].forEach(([a,b,c,l])=>{
+        const a2=Math.max(a,start); if(b<=start) return;
+        g.fillStyle=c;g.globalAlpha=.07;g.fillRect(x(a2)-bw,padT,x(b-1)-x(a2)+bw*2,plotH);g.globalAlpha=.8;
+        g.font="600 10.5px "+css("--body");g.textAlign="left";g.fillText(l,x(a2)-bw+4,padT+12);g.globalAlpha=1;
+      });
+      // fenêtre 8h-9h Bénin (9h-10h Paris)
+      g.setLineDash([4,4]);g.strokeStyle=C.text;g.globalAlpha=.35;g.strokeRect(x(108)-bw,padT+1,x(N-1)-x(108)+bw*2,plotH-2);g.setLineDash([]);g.globalAlpha=1;
+    }
+    // IPA H1
+    if(layers.ipa){
+      g.fillStyle=C.ai;g.globalAlpha=.12;g.fillRect(x(Math.max(start,20)),y(147.70),plotW-x(Math.max(start,20)),y(147.55)-y(147.70));g.globalAlpha=1;
+      g.strokeStyle=C.ai;g.setLineDash([2,3]);g.strokeRect(x(Math.max(start,20))+.5,y(147.70)+.5,plotW-x(Math.max(start,20))-1,y(147.55)-y(147.70));g.setLineDash([]);
+      label(g,"IPA H1 · 147.55–147.70 · précédé d'un FVG",x(Math.max(start,24)),y(147.70)+13,C.ai,"left");
+    }
+    // liquidités
+    if(layers.liq){
+      hline(g,x(Math.max(start,2)),x(N-1),y(147.38),C.warn,[5,4],"ASH 147.38 · prise");
+      hline(g,x(Math.max(start,2)),x(N-1),y(147.12),C.warn,[5,4],"ASL 147.12 · prise (S/B)");
+      g.fillStyle=C.warn;[29,50,74].forEach(i=>{if(i>=start){g.beginPath();g.arc(x(i),y(bars[i-start].l)+7,2.6,0,7);g.fill()}});
+      if(74>=start) label(g,"EQL ×3",x(74),y(147.128)+20,C.warn,"center");
+      hline(g,x(101),x(N-1),y(147.445),C.bear,[2,3],"Fake BOS 147.44 · TRAP · prochaine cause");
+    }
+    // FVG / IFVG
+    if(layers.fvg){
+      g.fillStyle=C.bull;g.globalAlpha=.18;g.fillRect(x(113),y(147.16),x(N-1)-x(113),y(147.12)-y(147.16));g.globalAlpha=1;
+      label(g,"FVG M5",x(N-1)-4,y(147.16)-3,C.bull,"right");
+      g.fillStyle=C.bear;g.globalAlpha=.16;g.fillRect(x(108),y(147.285),x(116)-x(108),y(147.25)-y(147.285));g.globalAlpha=1;
+      label(g,"IFVG",x(116)+4,y(147.268)+3,C.bull,"left");
+    }
+    // bougies
+    bars.forEach((b,j)=>{const i=j+start,up=b.c>=b.o,col=up?C.bull:C.bear;
+      g.strokeStyle=col;g.fillStyle=col;g.lineWidth=1;
+      g.beginPath();g.moveTo(Math.round(x(i))+.5,y(b.h));g.lineTo(Math.round(x(i))+.5,y(b.l));g.stroke();
+      const t=y(Math.max(b.o,b.c)),hgt=Math.max(1,Math.abs(y(b.o)-y(b.c)));
+      if(i===112){g.fillStyle=C.bear;g.fillRect(x(i)-bw/2,t,bw,hgt);g.strokeStyle=C.warn;g.lineWidth=1.5;g.strokeRect(x(i)-bw/2-2,t-2,bw+4,hgt+4);g.lineWidth=1}
+      else g.fillRect(x(i)-bw/2,t,bw,hgt);
+    });
+    // structure
+    if(layers.struct){
+      if(101>=start) label(g,"No Strong High",x(101),y(147.445)-8,C.bear,"center");
+      label(g,"S/B · CISD 08:20",x(112)-6,y(147.035)+26,C.warn,"right");
+      label(g,"Strong Low",x(113)+4,y(147.02)+12,C.bull,"left");
+      label(g,"BOS interne",x(122),y(147.36)-8,C.text,"center");
+    }
+    // setup
+    if(layers.trade){
+      const e=147.188,sl=146.985,tp=147.797,a=x(115),b=plotW-6;
+      g.fillStyle=C.bull;g.globalAlpha=.10;g.fillRect(a,y(tp),b-a,y(e)-y(tp));
+      g.fillStyle=C.bear;g.globalAlpha=.14;g.fillRect(a,y(e),b-a,y(sl)-y(e));g.globalAlpha=1;
+      hline(g,a,b,y(e),C.text,[],"Entrée 147.188");hline(g,a,b,y(tp),C.bull,[],"TP 3R 147.797");hline(g,a,b,y(sl),C.bear,[],"SL 146.985");
+    }
+    // prix courant
+    const last=bars[n-1].c;$("#px").textContent=last.toFixed(3);g.fillStyle=C.ai;g.fillRect(plotW+1,y(last)-8,padR-2,16);g.fillStyle="#0C111C";g.font="600 10px "+css("--mono");g.textAlign="left";g.textBaseline="middle";g.fillText(last.toFixed(3),plotW+4,y(last));
+    function hline(g,a,b,yy,col,dash,txt){g.strokeStyle=col;g.setLineDash(dash);g.beginPath();g.moveTo(a,Math.round(yy)+.5);g.lineTo(b,Math.round(yy)+.5);g.stroke();g.setLineDash([]);label(g,txt,b-4,yy-4,col,"right")}
+    function label(g,t,xx,yy,col,al){g.font="500 10.5px "+css("--body");g.textAlign=al;g.textBaseline="alphabetic";const w=g.measureText(t).width,x0=al==="right"?xx-w:al==="center"?xx-w/2:xx;g.fillStyle="rgba(12,17,28,.78)";g.fillRect(x0-3,yy-10,w+6,13);g.fillStyle=col;g.fillText(t,xx,yy)}
+  }
+  new ResizeObserver(()=>drawChart()).observe(cv.parentElement);
+
+  /* ---------- retours ---------- */
+  const fbState=store.get("hf-fb",{});
+  $$(".fb").forEach(grp=>{const key=grp.dataset.group;const btns=Array.from(grp.children);
+    btns.forEach((b,i)=>{if(fbState[key]===i)b.setAttribute("aria-pressed","true");
+      b.addEventListener("click",()=>{btns.forEach(x=>x.setAttribute("aria-pressed",String(x===b)));fbState[key]=i;store.set("hf-fb",fbState)})})});
+  $("#take").addEventListener("click",()=>{$("#take-note").innerHTML='<b style="color:var(--bull)">Trade enregistré dans le journal.</b> Le compagnon de position le suit : breakeven à 147.30, PCE à 13:30.'});
+  $("#skip").addEventListener("click",()=>{$("#take-note").innerHTML='<b style="color:var(--muted)">Setup marqué « non pris ».</b> Son résultat théorique sera quand même mesuré pour les statistiques.'});
+
+  /* ---------- fiches ---------- */
+  const fiches=[
+    {d:"Jeu. 25 · 08:20",w:"Londres",s:"Achat",g:"a",st:"En cours",tr:"CISD + IFVG M5",e:"147.188",r:"—",conf:["S/B net","ASL + EQL","IPA H1 au-dessus","Fenêtre 8h–9h","Pas de retest"],c:"bull"},
+    {d:"Mer. 24 · 13:34",w:"NY 13h30",s:"Vente",g:"a",st:"Pris",tr:"IFVG M3",e:"148.012",r:"+3.0 R",conf:["B/S sur stats US","IPA D1 comblé","EQL cible"],c:"bear"},
+    {d:"Mer. 24 · 08:40",w:"Londres",s:"Vente",g:"b",st:"Non pris",tr:"Petit BOS M1",e:"147.86",r:"théorique −1 R",conf:["B/S moyen","Contre le biais H4"],c:"bear"},
+    {d:"Mar. 23 · 16:05",w:"London Close",s:"Achat",g:"b",st:"Pris hors plan",tr:"Retest",e:"147.40",r:"−1.0 R",conf:["Cycle terminé","Retest ⚠"],c:"bull"},
+    {d:"Mar. 23 · 14:32",w:"NY 14h30",s:"Achat",g:"a",st:"Non pris",tr:"CISD M5",e:"147.12",r:"théorique +3 R",conf:["S/B net","PDL pris","IPA H4"],c:"bull"},
+    {d:"Lun. 22 · 08:15",w:"Londres",s:"Achat",g:"a",st:"Pris",tr:"BPR M5",e:"146.95",r:"0.0 R (BE)",conf:["S/B net","ASL","BPR"],c:"bull"},
+    {d:"Lun. 22 · 01:50",w:"Asie (fix)",s:"Achat",g:"b",st:"Non pris",tr:"IFVG M3",e:"146.80",r:"théorique +2 R",conf:["Gotobi","Fixing de Tokyo","Hors fenêtre formation"],c:"bull"}
+  ];
+  $("#cards").innerHTML=fiches.map(f=>`<article class="fiche"><div class="stripe" style="background:var(--${f.c})"></div><div class="in">
+    <div class="row"><div><div style="font-weight:600">${f.s} · ${f.w}</div><div class="meta mono">${f.d}</div></div><span class="grade ${f.g}">${f.g==="a"?"A":"B"}</span></div>
+    <div class="kv"><div>Déclencheur<b style="font-family:var(--body);font-size:12px">${f.tr}</b></div><div>Entrée<b>${f.e}</b></div><div>Résultat<b class="res" style="color:${/\+/.test(f.r)?"var(--bull)":/−/.test(f.r)?"var(--bear)":"var(--text)"}">${f.r}</b></div></div>
+    <div class="conf">${f.conf.map(c=>`<span>${c}</span>`).join("")}</div>
+    <div class="row"><span class="chip ${f.st.startsWith("Pris")?(f.st.includes("hors")?"bear":"bull"):f.st==="En cours"?"ai":""}">${f.st}</span><button class="fbb">Ouvrir la fiche</button></div>
+  </div></article>`).join("");
+
+  /* ---------- journal ---------- */
+  function bars(el,rows){$(el).innerHTML=rows.map(([l,v,n])=>{const w=Math.abs(v)/2*100,col=v>=0?"var(--bull)":"var(--bear)";return `<div class="bar"><span>${l}<br><span style="color:var(--faint);font-size:11px">${n} setups</span></span><div class="tr"><span style="width:${Math.min(100,w)}%;background:${col}"></span></div><span class="val" style="color:${col}">${v>0?"+":""}${v.toFixed(2)} R</span></div>`}).join("")}
+  bars("#bars-win",[["Londres 8h–9h",1.62,38],["NY 13h30–14h",0.94,21],["NY 14h30–15h",1.18,27],["London Close",0.21,14],["Asie · fixing",0.66,11]]);
+  bars("#bars-trig",[["IFVG M3",1.41,29],["CISD M5",1.22,34],["BPR M5",1.55,12],["Petit BOS M1",0.38,19],["Retest (hors règle)",-0.72,9]]);
+  const eq=[0,1,0,3,3,2,5,5,8,7,10,13,12,15,18,17.4,21.4];
+  (function(){const s=$("#equity"),W=520,H=200,L=34,R=10,T=12,B=24,mx=24;const X=i=>L+i/(eq.length-1)*(W-L-R),Y=v=>T+(mx-v)/mx*(H-T-B);
+    let h="";for(let v=0;v<=mx;v+=6){h+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#1B263B"/><text x="${L-6}" y="${Y(v)+3}" fill="#5B6782" font-size="10" text-anchor="end" font-family="JetBrains Mono,monospace">${v}R</text>`}
+    const pts=eq.map((v,i)=>X(i)+","+Y(v)).join(" ");
+    h+=`<polygon points="${X(0)},${Y(0)} ${pts} ${X(eq.length-1)},${Y(0)}" fill="rgba(143,168,255,.12)"/><polyline points="${pts}" fill="none" stroke="#8FA8FF" stroke-width="2"/><circle cx="${X(eq.length-1)}" cy="${Y(eq[eq.length-1])}" r="4" fill="#8FA8FF"/><text x="${X(eq.length-1)-6}" y="${Y(eq[eq.length-1])-9}" fill="#E4E8F1" font-size="11" text-anchor="end" font-family="JetBrains Mono,monospace">+21.4 R</text><text x="${L}" y="${H-6}" fill="#5B6782" font-size="10" font-family="IBM Plex Sans,sans-serif">16 trades · 30 jours</text>`;
+    s.innerHTML=h})();
+  const props=[
+    {t:"Relever le seuil du Sell to Buy / Buy to Sell",p:"Tu as marqué 6 B/S sur 9 comme « pas assez flagrants ». Proposition : seuil de 1.8× à 2.2× l'ATR des 20 dernières bougies. Testé hors échantillon : +0.21 R par setup.",k:"Calibration"},
+    {t:"Ne plus alerter en London Close contre le biais H4",p:"14 setups, espérance −0.35 R. Ceux qui vont dans le sens du biais restent alertés.",k:"Filtre"},
+    {t:"Élargir la tolérance des equal lows à 2.5 pips en M5",p:"Tu as ajouté 4 EQL que le moteur avait manqués cette semaine.",k:"Calibration"}
+  ];
+  const pState=store.get("hf-props",{});
+  function renderProps(){$("#props").innerHTML=props.map((p,i)=>`<div class="prop"><div class="p-h"><b style="font-size:13px">${p.t}</b><span class="chip">${p.k}</span></div><p>${p.p}</p>${pState[i]?`<span class="done" style="color:${pState[i]==="ok"?"var(--bull)":"var(--muted)"}">${pState[i]==="ok"?"Validé · appliqué à la version 0.4 du moteur":"Refusé · règle inchangée"}</span>`:`<div class="btn-row" style="margin-top:2px"><button class="btn primary" data-i="${i}" data-a="ok">Valider</button><button class="btn" data-i="${i}" data-a="no">Refuser</button></div>`}</div>`).join("");
+    $$("#props button").forEach(b=>b.addEventListener("click",()=>{pState[b.dataset.i]=b.dataset.a;store.set("hf-props",pState);renderProps()}))}
+  renderProps();
+
+  /* ---------- carte de chaleur (illustration) ---------- */
+  (function(){const days=["Lun","Mar","Mer","Jeu","Ven"];let h='<div></div>';
+    for(let hr=0;hr<24;hr++)h+=`<div class="ht">${hr%3===0?String(hr).padStart(2,"0"):""}</div>`;
+    const base=hr=>{const m=hr*60;const lon=P(9),nyo=NY(8.5);
+      if(Math.abs(m-lon)<=60)return .9; if(Math.abs(m-nyo)<=90)return .95; if(hr>=Math.floor(fix/60)-1&&hr<=Math.floor(fix/60))return .6; if(hr>=21||hr<=5)return .3; return .45};
+    days.forEach((d,di)=>{h+=`<div class="hl">${d}</div>`;for(let hr=0;hr<24;hr++){const v=Math.max(.08,Math.min(1,base(hr)+(rnd()-.5)*.25-(di===4&&hr>15?.3:0)));
+      const c=`rgba(143,168,255,${(v*.9).toFixed(2)})`;h+=`<div class="hc" style="background:${c}" title="${d} ${hr}h · ${(v*100).toFixed(0)}"></div>`}});
+    const el=$("#heat");el.style.gridTemplateColumns="34px repeat(24,minmax(14px,1fr))";el.style.minWidth="460px";el.innerHTML=h})();
+
+  show(store.get("hf-tab","cockpit"));
+})();
+</script>
