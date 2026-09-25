@@ -116,6 +116,56 @@ Statut d'une lecture : `à valider` tant que le trader ne l'a pas confirmée.
 
 ---
 
+## Lot 3
+
+### Ex11 · 16/09/2026 · M5 · suite d'Ex10 (`lot-3/ex11.png`)
+| Élément | Lecture |
+|---|---|
+| Déroulé | À 13:20 UTC, le rallye continue jusqu'à **155.296**, au-dessus du SL (~155.28) |
+| Résultat probable | **−1R**, avant même le FOMC de 18:00 UTC |
+| Contexte a posteriori | Les jours suivants sont très haussiers (156.41 le soir même, 157.33 le 18/09). La vente d'Ex10 allait **contre le biais HTF** |
+| Statut | à valider |
+
+### Ex12 · 17/09/2026 · M3 · achat (`lot-3/ex12.png`)
+| Élément | Lecture |
+|---|---|
+| Contexte HTF | La veille, NY monte jusqu'à **156.414** après le FOMC |
+| Accumulation | Tokyo range 155.53–156.28, puis Londres range **155.55–155.91** |
+| Liquidité | Ligne « **$** » à **~155.54** (plus bas de Tokyo et de Londres, equal lows) et ligne bleue **~155.51** (IPA M15, voir Ex13) |
+| Manipulation | 12:10–12:30 UTC, début de NY : chute nette de 155.91 à **155.338**, qui balaie « $ » et l'IPA M15. **Sell to Buy flagrant** |
+| Entrée | Achat ~155.54 vers 12:35 UTC, après la reprise de la ligne « $ » |
+| SL / TP | SL ~155.30 · TP initial vers le plus haut de la veille (156.41) |
+| Statut | à valider |
+
+### Ex13 · 18/09/2026 · M5 · suite d'Ex12 (`lot-3/ex13.png`)
+| Élément | Lecture |
+|---|---|
+| Repères | Ligne jaune **155.541** = prix d'entrée. Lignes bleues annotées « **IPA 15** » (155.51 et 155.23) |
+| Déroulé | Montée régulière pendant NY, pause la nuit, puis **pointe à 157.33 pendant Tokyo** le 18/09 vers 03:00–05:00 UTC |
+| Résultat probable | TP vers **~157.10**, soit **environ +6.5R**, après **~15 h de position, nuit comprise** |
+| Leçon | Le trade type de la formation : biais HTF haussier, balayage d'equal lows + IPA M15, Sell to Buy net à l'ouverture de NY, entrée à la reprise du niveau |
+| Statut | à valider |
+
+### Ex14 · 22/09/2026 · M1 · vente (`lot-3/ex14.png`)
+| Élément | Lecture |
+|---|---|
+| Contexte | Tokyo et le début de Londres tiennent vers **157.70–157.78**. À 08:37–08:45 UTC, **chute brutale** jusqu'à 156.87 : cassure de 157.565, puis de 157.265 |
+| Niveaux | 157.565 (support de Tokyo cassé) · **157.265** (niveau cassé pendant la chute) · 156.97 |
+| Retracement | 08:55–09:15 UTC : remontée jusqu'à **~157.27**, qui revient sur 157.265, dans le déséquilibre laissé par la chute |
+| Entrée | Vente ~157.21 vers 09:15 UTC |
+| SL / TP | SL ~157.30 · TP ~156.85 (plus bas de la chute), ≈4R |
+| Question | Selon la formation, pas d'entrée sur retest. Ici, qu'est-ce qui rend ce retour valide pour toi : le comblement du déséquilibre (IPA en petite UT), une prise de liquidité sur 157.265, ou un Buy to Sell en M1 ? |
+| Statut | à valider |
+
+### Ex15 · 22/09/2026 · M1 · suite d'Ex14 (`lot-3/ex15.png`)
+| Élément | Lecture |
+|---|---|
+| Déroulé | Descente régulière (flèche en pointillés) jusqu'à **156.850** à 10:00 UTC |
+| Résultat probable | **TP touché, environ +4R**, en ~45 minutes |
+| Statut | à valider |
+
+---
+
 ## Premiers constats (lot 1)
 
 1. **Tes entrées se font surtout entre 10:00 et 13:00 UTC** (11h–14h Bénin). C'est après la fenêtre de Londres de la formation (07:00–08:00 UTC) et avant ou pendant les stats US. L'outil doit mesurer **tes** fenêtres réelles, pas seulement celles de la formation.
@@ -129,3 +179,21 @@ Statut d'une lecture : `à valider` tant que le trader ne l'a pas confirmée.
 6. **Ex8 → Ex9 montre la valeur du filtre IPA** : une vente placée sous un IPA H1 non comblé a été stoppée quand le prix est allé combler l'IPA. Le moteur doit afficher « TRAP : IPA H1 ouvert au-dessus ».
 7. **Les grosses annonces ont décidé de deux trades sur cinq** : les NFP (Ex7) et, probablement, le FOMC (Ex10). Le compagnon de position doit prévenir avant chaque annonce majeure, avec le R en cours et la distance au SL.
 8. **Tu déplaces parfois ton TP en cours de route** (Ex2, Ex7). Le journal doit enregistrer le TP initial, le TP final et la raison du changement, pour mesurer si ces ajustements te rapportent.
+
+## Constats du lot 3
+
+9. **Tes meilleurs trades cochent toutes les cases de la formation** (Ex12→13 : biais HTF + equal lows + IPA M15 + Sell to Buy flagrant à l'ouverture de NY + entrée à la reprise). **Tes pertes ont chacune un défaut identifiable** : vente contre le biais HTF (Ex10→11), vente sous un IPA H1 ouvert (Ex8→9), achat juste avant les stats US (Ex3→4). Sur si peu de trades, c'est une piste et non une preuve. C'est exactement ce que le score de setup et les statistiques devront confirmer.
+10. **Tu tiens parfois une position la nuit** (Ex13 : ~15 h, gain réalisé pendant Tokyo). Le compagnon de position doit couvrir la nuit : annonces japonaises, fixing de Tokyo, swap.
+11. **Tu prends aussi des continuations après un mouvement violent** (Ex14→15) : retour dans le déséquilibre, puis reprise du mouvement. Ce modèle n'est pas décrit tel quel dans la formation. Il faut le définir avec toi pour le coder (voir la question d'Ex14).
+
+## Bilan provisoire (15 captures, 8 trades)
+| Trade | Captures | Résultat probable |
+|---|---|---|
+| Achat 24/08 | Ex1–2 | ? (TP manqué de 0.2 pip) |
+| Achat 25/08 | Ex3–4 | −1R |
+| Vente 26/08 | Ex5 | ? |
+| Vente 04/09 | Ex6–7 | ≈ +1.1R (TP ramené avant les NFP) |
+| Vente 08/09 | Ex8–9 | −1R |
+| Vente 16/09 | Ex10–11 | −1R |
+| Achat 17/09 | Ex12–13 | ≈ +6.5R |
+| Vente 22/09 | Ex14–15 | ≈ +4R |
