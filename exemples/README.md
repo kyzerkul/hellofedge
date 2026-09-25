@@ -251,10 +251,9 @@ Sur les 9 trades au résultat connu : **6 gagnants, 3 perdants, environ +17.6R**
 2. Le prix le prend avec une accélération nette : **Sell to Buy ou Buy to Sell**.
 3. **Entrée à la reprise du niveau**, le plus souvent en M1 (parfois M3 ou M5).
 4. SL juste derrière la mèche de manipulation.
-5. TP sur l'extrême opposé : plus bas ou plus haut de Tokyo, de Londres ou de la veille. RR visé : 3 à 6R, souvent ramené en cours de route.
+5. TP sur l'extrême opposé : plus bas ou plus haut de Tokyo, de Londres ou de la veille. RR visé : 3 à 6R. Le TP n'est jamais déplacé ; seul le SL passe à breakeven (voir les règles confirmées).
 
-**Modèle B · Continuation après déplacement** (Ex14)
-Mouvement violent, retour dans le déséquilibre laissé, entrée dans le sens du mouvement. À définir avec le trader.
+~~**Modèle B · Continuation après déplacement**~~ : **supprimé**. Le trader précise qu'Ex14–15 n'est pas un modèle à part : il était déjà en position, a paniqué et est sorti trop tôt, alors que la figure était une AMD normale (accumulation, manipulation, puis réintégration du niveau).
 
 ### Tes horaires réels
 - **07:55 – 10:40 UTC** (Londres, 8h55–11h40 au Bénin) : 6 trades, **5 gagnants, 1 perdant** ;
@@ -270,3 +269,11 @@ Piste à vérifier sur beaucoup plus de données : **Londres te réussit mieux q
 | Blanc | Plus haut ou plus bas d'une session précédente |
 | Jaune | Niveau clé : prix d'entrée ou objectif |
 | Rectangle | Range d'accumulation de la session |
+
+## Règles confirmées par le trader (après le lot 4)
+
+1. **Prise de liquidité = clôture du corps**, pas la mèche. Sur M1, M3 ou M5, un niveau n'est considéré comme pris que si **le corps d'une bougie clôture au-delà**. Une simple mèche ne compte pas.
+2. **« Flagrant »** : après une petite accumulation, une **accélération vers la liquidité anormalement grande par rapport au mouvement qui précède dans la zone**. À coder comme un ratio : amplitude ou vitesse des bougies de manipulation comparée à celle des N bougies de l'accumulation. Seuil à calibrer sur les exemples.
+3. **Code couleur** : rouge = liquidité · bleu = IPA · blanc = niveaux extrêmes (plus hauts ou plus bas de sessions précédentes). Jaune : à confirmer.
+4. **Le TP n'est jamais déplacé.** Les positions dont la zone verte semble raccourcie (Ex2, Ex7, Ex17) sont en réalité des **sorties à breakeven** : le trader redessine l'outil de position jusqu'au niveau de sortie. → Les résultats « TP ramené » du bilan sont à reclasser en **0R (BE)** après confirmation.
+5. **Règle du breakeven** : avant de prendre la liquidité, le prix forme de petits points de structure internes (petits highs en descente vers des lows, petits lows en montée vers des highs). Après l'entrée, **dès que le prix casse le dernier de ces points (BOS interne), le SL passe à l'entrée**. Le compagnon de position doit détecter ce point et prévenir : « BOS interne cassé : passe à BE ».

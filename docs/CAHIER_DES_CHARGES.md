@@ -81,6 +81,8 @@ Sources : le PDF (113 pages) et **la transcription complète de la formation**. 
 - **La seule preuve d'une vraie prise de liquidité** : une bougie (ou une série) d'**accélération nette**, clairement différente des bougies précédentes, qui balaie la liquidité, suivie du retournement.
 - Règle du formateur : « **Si tu te demandes si c'en est un, c'est que ce n'en est pas un.** » C'est flagrant ou ça n'existe pas. → Le code utilisera un seuil strict (taille du corps comparée à l'ATR ou aux N bougies précédentes, à calibrer).
 - **Pas de B/S ou de S/B = pas de manipulation = pas de trade.**
+- **Règle du trader : la prise de liquidité se valide sur la clôture du corps d'une bougie au-delà du niveau** (M1, M3 ou M5), jamais sur une simple mèche.
+- **« Flagrant » selon le trader** : après une petite accumulation, une accélération vers la liquidité anormalement grande par rapport au mouvement qui précède dans la zone.
 
 ### 1.7 CISD (définition propre à la formation)
 - **La bougie qui prend la liquidité**, c'est-à-dire celle du B/S ou du S/B.
@@ -121,7 +123,7 @@ Visible sur deux schémas mais **jamais expliquée dans la formation**. Hors de 
    - **petit True BOS** (première cassure).
 5. **⛔ Jamais sur le retest.** Entrée **pendant le cycle, avant que le prix prenne la prochaine liquidité du cycle**. Une fois cette liquidité prise, le cycle est terminé : l'ancienne zone devient elle-même une liquidité ou un piège, et il faut attendre un **nouveau cycle**.
 6. **SL** : au-delà de la bougie CISD ou de l'extrême de la manipulation.
-7. **Breakeven** : dès que le prix prend la première liquidité intermédiaire, ou à la cassure de la structure interne.
+7. **Breakeven (règle du trader)** : avant la prise de liquidité, le prix forme de petits points de structure internes. Après l'entrée, **dès que le prix casse le dernier de ces points (BOS interne), le SL passe à l'entrée**. Le TP n'est jamais déplacé.
 8. **TP** : **3R** si la prochaine liquidité du cycle est à 3R ou plus ; **2R** si elle est proche (moins de ~1,5R à 2R). Des cibles plus lointaines (IPA HTF, liquidité finale) sont possibles, mais le formateur coupe à 2 ou 3R.
 9. **Discipline** : **1 trade par jour et arrêt après un TP** ; 2 trades maximum. Marché illisible → pas de trade (« ne pas trader, c'est trader »). Les meilleurs traders prop font 11 à 15 trades par mois.
 
