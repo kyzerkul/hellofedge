@@ -1,0 +1,14 @@
+/* Styles provisoires du squelette. Le design system (scope n°5) les remplacera. */
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  background: #0b0e14;
+  color: #e6e6e6;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}

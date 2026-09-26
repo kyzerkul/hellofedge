@@ -1,0 +1,16 @@
+# HTTPS automatique pour le domaine du trader, puis tout vers l'api.
+{$HELLOFEDGE_DOMAIN} {
+	# Flux en direct du cockpit (SSE) : ni mise en tampon ni compression.
+	# Le flux devra être servi sous /api/stream.
+	@stream path /api/stream*
+	handle @stream {
+		reverse_proxy api:8000 {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		encode zstd gzip
+		reverse_proxy api:8000
+	}
+}

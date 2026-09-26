@@ -1,0 +1,84 @@
+# Hellofedge sur le VPS. Les valeurs viennent du fichier .env posé à côté (droits 600),
+# écrit par le déploiement depuis les secrets GitHub. Voir .env.example pour les noms.
+#
+# Déploiement, dans cet ordre :
+#   docker compose pull
+#   docker compose run --rm migrate      (migrations, conteneur ponctuel)
+#   docker compose up -d
+#
+# Règle : une seule copie du worker. Ne jamais lancer `--scale worker=2`
+# (le verrou PostgreSQL arrêterait de toute façon la seconde copie).
+
+name: hellofedge
+
+x-app: &app
+  image: ghcr.io/kyzerkul/hellofedge:${IMAGE_TAG:?IMAGE_TAG manquant}
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql://hellofedge:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant}@postgres:5432/hellofedge
+  depends_on:
+    postgres:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:17.11
+    environment:
+      POSTGRES_USER: hellofedge
+      POSTGRES_DB: hellofedge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Pas de `ports` : la base reste dans le réseau Docker.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hellofedge -d hellofedge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    profiles: ["migrate"]
+
+  api:
+    <<: *app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    <<: *app
+    command: ["hellofedge-worker"]
+    healthcheck:
+      test: ["CMD", "hellofedge-worker", "--check"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  caddy:
+    image: caddy:2.11.4
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      HELLOFEDGE_DOMAIN: ${HELLOFEDGE_DOMAIN:?HELLOFEDGE_DOMAIN manquant}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

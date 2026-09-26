@@ -41,9 +41,9 @@ _Ce sont des recommandations pour garder la construction en ordre, pas des oblig
 Choisir les outils (langage, base de données, hébergement 24 h/24, planification des tâches, envoi Telegram), puis poser un squelette qui démarre. Tout le reste s'appuie dessus.
 **Done when:** la stack est écrite dans une spec validée par le trader, le coût mensuel estimé tient sous 30 €, et le squelette vide démarre et passe le build.
 - [x] Décider la stack (spec): `/architect stack et architecture`
-- [ ] Poser le squelette selon la décision: `/develop stack et architecture`
+- [x] Poser le squelette selon la décision: `/develop stack et architecture`
 - [ ] Vérifier qu'il démarre: `/test`
-Spec [0001](../specs/0001-stack-architecture/index.md)
+Spec [0001](../specs/0001-stack-architecture/index.md) · code dans `backend/`, `frontend/`, `deploy/`, `Dockerfile`
 
 ### 2. Source de prix (historique et temps réel) · in-progress
 Remplacer OANDA par une source de bougies USD/JPY la plus proche possible du flux TradingView du trader, en historique (pour le rejeu) comme en direct (pour les alertes).
