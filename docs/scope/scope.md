@@ -20,7 +20,7 @@ _Ce sont des recommandations pour garder la construction en ordre, pas des oblig
 
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
-| 1 | Stack et architecture | Foundation | planned |
+| 1 | Stack et architecture | Foundation | in-progress |
 | 2 | Source de prix (historique et temps réel) | Foundation | planned |
 | 3 | Normes de code et outillage | Foundation | planned |
 | 4 | Modèle de données | Foundation | planned |
@@ -37,10 +37,13 @@ _Ce sont des recommandations pour garder la construction en ordre, pas des oblig
 
 ## Foundations
 
-### 1. Stack et architecture · needs a decision
+### 1. Stack et architecture · in-progress
 Choisir les outils (langage, base de données, hébergement 24 h/24, planification des tâches, envoi Telegram), puis poser un squelette qui démarre. Tout le reste s'appuie dessus.
 **Done when:** la stack est écrite dans une spec validée par le trader, le coût mensuel estimé tient sous 30 €, et le squelette vide démarre et passe le build.
-- [ ] Décider la stack (spec): `/architect stack et architecture`
+- [x] Décider la stack (spec): `/architect stack et architecture`
+- [ ] Poser le squelette selon la décision: `/develop stack et architecture`
+- [ ] Vérifier qu'il démarre: `/test`
+Spec [0001](../specs/0001-stack-architecture/index.md)
 
 ### 2. Source de prix (historique et temps réel) · needs a decision
 Remplacer OANDA par une source de bougies USD/JPY la plus proche possible du flux TradingView du trader, en historique (pour le rejeu) comme en direct (pour les alertes).
