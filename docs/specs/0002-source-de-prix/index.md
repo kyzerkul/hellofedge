@@ -1,7 +1,7 @@
 # 0002. Source de prix : choisir par la mesure, bougies M1 bid du fournisseur
 
 **Date**: 2026-09-26
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

@@ -18,10 +18,21 @@ Tout ce qui est destiné au trader (messages, docs, scope, specs, interface) est
 - Le M3 est reconstruit à partir du M1 (OANDA ne fournit pas de M3).
 
 ## Stack
-À décider par `/architect` (voir `docs/specs/` quand il existera). Rien n'est installé avant cette décision.
+Décidée dans la spec [0001](docs/specs/0001-stack-architecture/index.md) : un monolithe Python 3.13 (FastAPI, SQLAlchemy 2 et Alembic, PostgreSQL 17) avec deux processus tirés de la même image, `worker` (prix, moteur, alertes) et `api` (API et cockpit), plus un cockpit React et TypeScript (Vite) servi par l'`api`. Déploiement avec Docker Compose et Caddy sur un VPS.
+- Le module `engine` est pur : aucun accès réseau, base ou horloge système. C'est ce qui rend le rejeu identique au direct.
+- Tests : pytest dans `backend/`, Vitest dans `frontend/`. Les choix sont dans `test-preferences.json`.
+- Une bibliothèque s'installe avec la fonction qui en a besoin, jamais en avance.
+
+## Build approach
+Tracer Bullet : un fil réel et fin à travers toutes les couches, puis on épaissit un segment à la fois (en tête de `docs/scope/scope.md`).
 
 ## Workflow
 Skills du projet dans `.claude/skills/` : `/scope` → `/architect` → `/develop` → `/check verify` → `/test` → `/check review` → `/sync`. Décision coûteuse = plan présenté et validé par le trader avant tout code.
+
+## Context files
+- [backend/AGENTS.md](backend/AGENTS.md) : serveur Python (modules, commandes uv, worker, migrations, tests pytest).
+- [frontend/AGENTS.md](frontend/AGENTS.md) : cockpit React (commandes npm, tests Vitest).
+- [deploy/AGENTS.md](deploy/AGENTS.md) : Docker Compose, Caddy et règles d'exploitation du VPS.
 
 ## Git
 integration: off
