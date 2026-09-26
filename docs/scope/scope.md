@@ -56,7 +56,7 @@ Remplacer OANDA par une source de bougies USD/JPY la plus proche possible du flu
   - [ ] Direct dans le `worker`, coupures, rattrapage et état du flux (AC-4, AC-5, AC-6, AC-8, AC-11)
 - [ ] Vérifier: `/check verify source de prix`
 - [ ] Tester: `/test source de prix`
-Spec [0002](../specs/0002-source-de-prix/index.md)
+Spec [0002](../specs/0002-source-de-prix/index.md) · code dans `backend/src/hellofedge/data/`, `exemples/reference_oanda.csv`
 
 ### 3. Normes de code et outillage
 Fixer les conventions à partir du vrai squelette, puis installer le lint, le formatage, les hooks et la CI.
