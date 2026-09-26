@@ -29,6 +29,10 @@ Tracer Bullet : un fil réel et fin à travers toutes les couches, puis on épai
 ## Workflow
 Skills du projet dans `.claude/skills/` : `/scope` → `/architect` → `/develop` → `/check verify` → `/test` → `/check review` → `/sync`. Décision coûteuse = plan présenté et validé par le trader avant tout code.
 
+## Agent skills
+- [fastapi](.claude/skills/fastapi/): `fastapi/fastapi`, conventions officielles de FastAPI (routes, Pydantic, dépendances, flux SSE, service du cockpit).
+- MCP servers: pgEdge Postgres MCP (recommended), à connecter une fois la base de production en place.
+
 ## Context files
 - [backend/AGENTS.md](backend/AGENTS.md) : serveur Python (modules, commandes uv, worker, migrations, tests pytest).
 - [frontend/AGENTS.md](frontend/AGENTS.md) : cockpit React (commandes npm, tests Vitest).
