@@ -20,7 +20,7 @@ _Ce sont des recommandations pour garder la construction en ordre, pas des oblig
 
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
-| 1 | Stack et architecture | Foundation | in-progress |
+| 1 | Stack et architecture | Foundation | done |
 | 2 | Source de prix (historique et temps réel) | Foundation | in-progress |
 | 3 | Normes de code et outillage | Foundation | planned |
 | 4 | Modèle de données | Foundation | planned |
@@ -37,12 +37,12 @@ _Ce sont des recommandations pour garder la construction en ordre, pas des oblig
 
 ## Foundations
 
-### 1. Stack et architecture · in-progress
+### 1. Stack et architecture · done
 Choisir les outils (langage, base de données, hébergement 24 h/24, planification des tâches, envoi Telegram), puis poser un squelette qui démarre. Tout le reste s'appuie dessus.
 **Done when:** la stack est écrite dans une spec validée par le trader, le coût mensuel estimé tient sous 30 €, et le squelette vide démarre et passe le build.
 - [x] Décider la stack (spec): `/architect stack et architecture`
 - [x] Poser le squelette selon la décision: `/develop stack et architecture`
-- [ ] Vérifier qu'il démarre: `/test`
+- [x] Vérifier qu'il démarre: `/test`
 Spec [0001](../specs/0001-stack-architecture/index.md) · code dans `backend/`, `frontend/`, `deploy/`, `Dockerfile`
 
 ### 2. Source de prix (historique et temps réel) · in-progress

@@ -1,0 +1,28 @@
+{
+  "tool": "pytest",
+  "gate": null,
+  "additionalTools": ["pytest-asyncio", "httpx"],
+  "e2eTool": "none",
+  "testDir": "backend/tests",
+  "filePattern": "test_*.py",
+  "packageManager": "uv",
+  "packages": {
+    "backend": {
+      "tool": "pytest",
+      "additionalTools": ["pytest-asyncio", "httpx"],
+      "testDir": "tests",
+      "filePattern": "test_*.py",
+      "packageManager": "uv",
+      "runCommand": "uv run pytest",
+      "notes": "Les tests marqués base de données lisent TEST_DATABASE_URL (base PostgreSQL jetable). Sans elle, ils sont sautés avec une raison claire."
+    },
+    "frontend": {
+      "tool": "vitest",
+      "additionalTools": ["@testing-library/react", "@testing-library/user-event", "@testing-library/jest-dom"],
+      "testDir": "beside the source",
+      "filePattern": "*.test.tsx",
+      "packageManager": "npm",
+      "runCommand": "npm test"
+    }
+  }
+}
