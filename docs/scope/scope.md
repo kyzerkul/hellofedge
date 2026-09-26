@@ -21,7 +21,7 @@ _Ce sont des recommandations pour garder la construction en ordre, pas des oblig
 | # | Feature | Phase | Status |
 |---|---------|-------|--------|
 | 1 | Stack et architecture | Foundation | in-progress |
-| 2 | Source de prix (historique et temps réel) | Foundation | planned |
+| 2 | Source de prix (historique et temps réel) | Foundation | in-progress |
 | 3 | Normes de code et outillage | Foundation | planned |
 | 4 | Modèle de données | Foundation | planned |
 | 5 | Design system et base de l'interface | Foundation | planned |
@@ -45,10 +45,18 @@ Choisir les outils (langage, base de données, hébergement 24 h/24, planificati
 - [ ] Vérifier qu'il démarre: `/test`
 Spec [0001](../specs/0001-stack-architecture/index.md)
 
-### 2. Source de prix (historique et temps réel) · needs a decision
+### 2. Source de prix (historique et temps réel) · in-progress
 Remplacer OANDA par une source de bougies USD/JPY la plus proche possible du flux TradingView du trader, en historique (pour le rejeu) comme en direct (pour les alertes).
 **Done when:** la source est choisie et son écart avec le graphique du trader est mesuré sur quelques journées des exemples. Les bougies M1 arrivent en direct et le M3 et le M5 sont reconstruits à partir du M1 (M3 calé sur :00, :03, :06).
-- [ ] Décider la source (spec): `/architect source de prix`
+- [x] Décider la source (spec): `/architect source de prix`
+- [ ] Construire: `/develop source de prix`
+  - [ ] Points de référence OANDA lus sur les captures et validés par le trader (AC-1)
+  - [ ] Adaptateurs en lecture seule, test du direct et mesure comparative, puis choix de la source (AC-2, AC-7, AC-9, AC-12)
+  - [ ] Tables, chargement de 2 ans et révisions (AC-3, AC-10)
+  - [ ] Direct dans le `worker`, coupures, rattrapage et état du flux (AC-4, AC-5, AC-6, AC-8, AC-11)
+- [ ] Vérifier: `/check verify source de prix`
+- [ ] Tester: `/test source de prix`
+Spec [0002](../specs/0002-source-de-prix/index.md)
 
 ### 3. Normes de code et outillage
 Fixer les conventions à partir du vrai squelette, puis installer le lint, le formatage, les hooks et la CI.
@@ -137,6 +145,7 @@ Hors du MVP, gardé ici pour que le plan reste honnête. Ces fonctions viennent 
 - **Coach de discipline** : repère les trades hors plan · needs a decision
 - **Suivi des coûts IA** : dépense mensuelle et plafond · needs a decision
 - **Sauvegardes quotidiennes** : journal, retours et historique · needs a decision
+- **Contrôle des prix FundedNext** : lire les prix MT5 de la prop firm (MetaApi, lecture seule) et mesurer l'écart avec la source principale · from spec 0002
 
 ## Legend
 
