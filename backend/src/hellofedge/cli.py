@@ -18,30 +18,13 @@ from typing import Any
 
 from hellofedge.config import Settings, get_settings
 from hellofedge.data.ctrader import token as ctoken
-from hellofedge.data.ctrader.client import CTraderClient
-from hellofedge.data.ctrader.protocol import Msg, host_for
+from hellofedge.data.ctrader.protocol import Msg
 from hellofedge.data.feed import FeedError
+from hellofedge.data.sources import ConfigMissing, make_client
 from hellofedge.db import make_engine
 from hellofedge.logs import setup_logging
 
 log = logging.getLogger("hellofedge.cli")
-
-
-class ConfigMissing(RuntimeError):
-    pass
-
-
-def make_client(settings: Settings) -> CTraderClient:
-    if settings.ctrader_client_id is None or settings.ctrader_client_secret is None:
-        raise ConfigMissing(
-            "CTRADER_CLIENT_ID et CTRADER_CLIENT_SECRET sont requis (page Credentials "
-            "de l'application sur openapi.ctrader.com)"
-        )
-    return CTraderClient(
-        host_for(settings.ctrader_env),
-        settings.ctrader_client_id,
-        settings.ctrader_client_secret.get_secret_value(),
-    )
 
 
 def format_accounts(payload: dict[str, Any]) -> list[str]:
