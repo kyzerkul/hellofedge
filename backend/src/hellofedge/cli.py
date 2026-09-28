@@ -8,6 +8,8 @@
   sa profondeur d'historique, puis écrit `exemples/mesure_sources.md`.
 - `hellofedge feed live-test` : lit le direct pendant N minutes et ajoute le délai
   de chaque minute au même rapport.
+- `hellofedge feed backfill` : charge en base l'historique M1 de la source active
+  (2 ans par défaut, ce que le courtier fournit). Relancer ne crée aucun doublon.
 
 Sur le VPS, le dossier `exemples/` n'est pas dans l'image : on le monte, par exemple
 `docker compose run --rm -v "$PWD/../exemples:/app/exemples" api hellofedge feed compare`.
@@ -20,13 +22,14 @@ import argparse
 import asyncio
 import logging
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from hellofedge.config import Settings, get_settings
 from hellofedge.data.ctrader import token as ctoken
 from hellofedge.data import measure
+from hellofedge.data.backfill import BackfillResult, backfill
 from hellofedge.data.candle import M1
 from hellofedge.data.ctrader.protocol import Msg
 from hellofedge.data.feed import FeedError
@@ -149,6 +152,34 @@ async def feed_live_test(
         await engine.dispose()
 
 
+HISTORY_DEPTH = timedelta(days=730)
+
+
+def utc_minute(value: str) -> datetime:
+    """Une date (`2024-10-01`) ou une heure ISO, lue en UTC, ramenée à la minute."""
+    ts = datetime.fromisoformat(value)
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=UTC)
+    return ts.astimezone(UTC).replace(second=0, microsecond=0)
+
+
+async def feed_backfill(
+    settings: Settings, now: datetime, start: datetime | None, end: datetime | None
+) -> BackfillResult:
+    end = end or now.replace(second=0, microsecond=0)
+    start = start or end - HISTORY_DEPTH
+    engine = make_engine(settings.database_url)
+    try:
+        await ctoken.token_for_command(engine, settings, now)
+        feed = open_feed(settings, engine)
+        try:
+            return await backfill(engine, feed, start, end)
+        finally:
+            await feed.aclose()
+    finally:
+        await engine.dispose()
+
+
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="hellofedge")
     groups = p.add_subparsers(dest="group", required=True)
@@ -168,6 +199,9 @@ def parser() -> argparse.ArgumentParser:
     live = cmds.add_parser("live-test", help="teste le direct pendant N minutes")
     live.add_argument("--minutes", type=int, default=30)
     live.add_argument("--report", type=Path, default=DEFAULT_REPORT)
+    bf = cmds.add_parser("backfill", help="charge l'historique M1 en base")
+    bf.add_argument("--from", dest="start", type=utc_minute, help="défaut : 2 ans")
+    bf.add_argument("--to", dest="end", type=utc_minute, help="défaut : maintenant")
     return p
 
 
@@ -210,6 +244,18 @@ def main(argv: list[str] | None = None) -> int:
             )
             if missed:
                 return 1
+        elif args.cmd == "backfill":
+            res = asyncio.run(feed_backfill(settings, now, args.start, args.end))
+            oldest = (
+                "aucune bougie"
+                if res.oldest is None
+                else f"{res.oldest:%Y-%m-%d %H:%M} UTC"
+            )
+            print(
+                f"{res.inserted} bougies insérées, {res.ignored} déjà en base, "
+                f"{res.revisions} révisions notées. Plus ancienne bougie obtenue : "
+                f"{oldest}."
+            )
     except (
         ConfigMissing,
         ctoken.TokenMissing,

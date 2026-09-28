@@ -46,6 +46,7 @@ def test_offline_mode_writes_sql_without_touching_a_database():
     assert result.returncode == 0, result.stderr
     assert "BEGIN;" in result.stdout
     assert "CREATE TABLE provider_token" in result.stdout
+    assert "CREATE TABLE candle_m1" in result.stdout
 
 
 def test_the_database_url_never_comes_from_alembic_ini():
