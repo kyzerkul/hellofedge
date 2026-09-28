@@ -10,6 +10,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy.engine import Connection
 
+import hellofedge.data.models  # noqa: F401  (enregistre les tables sur Base.metadata)
 from hellofedge.config import get_settings
 from hellofedge.db import Base, async_url, make_engine
 

@@ -15,6 +15,8 @@ class FeedError(Exception):
     """Erreur d'une source. `cause` est la valeur écrite dans `feed_outage.cause`."""
 
     cause: str = "erreur_api"
+    # Code d'erreur renvoyé par le fournisseur, s'il y en a un.
+    error_code: str | None = None
 
 
 class FeedAuthError(FeedError):
@@ -44,7 +46,7 @@ class FeedUnavailable(FeedError):
 class PriceFeed(Protocol):
     """Une source de bougies M1 USD/JPY, en lecture seule."""
 
-    # Identifiant stocké dans `candle_m1.source` (`fxcm`, `finnhub_oanda`, `dukascopy`…).
+    # Identifiant stocké dans `candle_m1.source` (`ctrader_icmarkets`…).
     name: str
     # Prix fourni par la source : bid, ou mid si elle ne donne rien d'autre.
     price_kind: PriceKind

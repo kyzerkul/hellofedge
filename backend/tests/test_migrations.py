@@ -44,8 +44,8 @@ def test_offline_mode_writes_sql_without_touching_a_database():
     )
 
     assert result.returncode == 0, result.stderr
-    # Pas encore de migration écrite (scope n°4) : le script SQL est une transaction vide.
     assert "BEGIN;" in result.stdout
+    assert "CREATE TABLE provider_token" in result.stdout
 
 
 def test_the_database_url_never_comes_from_alembic_ini():
