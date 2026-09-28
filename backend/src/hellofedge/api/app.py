@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
+from hellofedge.api import feed
 from hellofedge.config import get_settings
 from hellofedge.db import make_engine
 from hellofedge.logs import setup_logging
@@ -47,6 +48,8 @@ def create_app() -> FastAPI:
                 {"status": "error", "database": "down"}, status_code=503
             )
         return JSONResponse({"status": "ok", "database": "ok"})
+
+    app.include_router(feed.router)
 
     # Le cockpit construit est servi en dernier, pour ne jamais masquer une route /api.
     if settings.frontend_dist.is_dir():

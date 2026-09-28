@@ -226,7 +226,7 @@ Approche Tracer Bullet : d'abord la mesure (elle décide de l'adoption), puis un
 8. Écrire `hellofedge feed backfill` (par semaine, insertion idempotente, une bougie existante n'est pas réécrite, les révisions vont dans `candle_revision`), puis charger l'historique disponible, jusqu'à 2 ans. Satisfait **AC-3**, **AC-10**. (Commande écrite et testée ; le chargement réel se fait sur le VPS.)
 9. Écrire la boucle du direct dans le `worker` (seconde 3, nouvelles tentatives, `NOTIFY` en JSON, journal des interrogations). Satisfait **AC-4**, **AC-8**. (Fait, testé en temps simulé contre une vraie base.)
 10. Ajouter la détection de coupure (causes, marché ouvert, rollover, jours fériés, fermeture au début du week-end) et le rattrapage au retour et au démarrage. Satisfait **AC-5**, **AC-6**. (Fait, testé en temps simulé contre une vraie base.)
-11. Ajouter `GET /api/feed/status`. Satisfait **AC-11**.
+11. Ajouter `GET /api/feed/status`. Satisfait **AC-11**. (Fait. La route répond 401 à tous tant que la Connexion, scope n°6, n'existe pas.)
 12. Mesurer le délai du direct pendant une journée complète, du mardi au jeudi, avec le détail par session, et le noter dans le rapport. Satisfait **AC-4**.
 
 ## Consequences

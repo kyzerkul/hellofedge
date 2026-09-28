@@ -54,7 +54,7 @@ Remplacer OANDA par une source de bougies USD/JPY la plus proche possible du flu
   - [x] Client cTrader, jeton et adaptateur en lecture seule (AC-9, AC-12, AC-13, AC-14)
   - [ ] Mesure sur le VPS contre les points OANDA, puis adoption de cTrader (AC-2, AC-7)
   - [ ] Tables, chargement de l'historique disponible (jusqu'à 2 ans) et révisions (AC-3, AC-10)
-  - [ ] Direct dans le `worker`, coupures, rattrapage et état du flux (AC-4, AC-5, AC-6, AC-8, AC-11)
+  - [x] Direct dans le `worker`, coupures, rattrapage et état du flux (AC-4, AC-5, AC-6, AC-8, AC-11)
 - [ ] Vérifier: `/check verify source de prix`
 - [ ] Tester: `/test source de prix`
 Spec [0002](../specs/0002-source-de-prix/index.md) · code dans `backend/src/hellofedge/data/`, `exemples/reference_oanda.csv`
