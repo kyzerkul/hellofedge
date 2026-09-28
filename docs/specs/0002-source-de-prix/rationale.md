@@ -60,6 +60,20 @@ Dukascopy fournit gratuitement, sans compte, un historique tick et M1 de très b
 - Deux sources différentes : le rejeu validerait des bougies que le direct ne verra jamais exactement. Un niveau « pris » dans le rejeu peut ne pas l'être en direct.
 - Le direct Dukascopy passe par JForex (Java), qui est lourd pour un VPS de 4 Go.
 
+### Option 5 : cTrader Open API sur un compte démo (retenue le 28/09/2026)
+
+L'API officielle et gratuite de Spotware donne les bougies M1 bid et un direct, avec un jeton de portée `accounts` (lecture seule), sur un compte démo d'un courtier cTrader (IC Markets).
+
+**Pros**:
+- API officielle, documentée et gratuite, en lecture seule par construction.
+- Bougies construites sur le bid, comme le graphique du trader. Un seul fournisseur pour l'historique et le direct.
+- Pas de terminal à faire tourner (contrairement à MT5).
+
+**Cons**:
+- Protocole plus lourd qu'une API REST : WebSocket permanent, maintien de connexion, jeton de 30 jours à renouveler.
+- Profondeur d'historique non garantie (elle dépend du courtier), 14 000 bougies au plus par requête.
+- Ce ne sont ni les prix OANDA ni ceux de FundedNext.
+
 ## Rationale
 
 La force dominante est la taille des balayages (0,2 à 1 pip) face à un écart inconnu entre sources. Choisir directement FXCM (option 2, la piste du trader) pourrait très bien marcher, mais on ne le saurait qu'au rejeu des 10 trades, en confondant alors un défaut du moteur avec un défaut de données. L'option 1 coûte un script et deux adaptateurs de plus, et en échange chaque écart futur aura une explication chiffrée. FXCM reste le favori par défaut de la mesure : si son écart passe le seuil, c'est lui qu'on garde.
@@ -76,6 +90,27 @@ Une relecture a proposé de choisir la source en rejouant directement les 10 tra
 - Panne : alerte, puis rattrapage automatique avec les bougies marquées `backfilled` (choix du trader). La bascule sur une source de secours est écartée, parce qu'elle mélangerait deux séries.
 - Seuil : 90 % des points à 0,3 pip ou moins. Plan B si aucune source ne passe : garder la plus proche et le signaler (choix du trader).
 - FundedNext : contrôle reporté après le MVP (choix du trader).
+
+## Révision du 28/09/2026 : pourquoi cTrader remplace les trois candidats
+
+Au moment de construire l'étape 3, les trois candidats se sont révélés inutilisables :
+
+| Source | Constat | Cause |
+|---|---|---|
+| FXCM | jeton impossible à obtenir | Trading Station Web redirige vers la nouvelle plateforme `app.fxcm.com`, qui n'offre pas la gestion du jeton |
+| Finnhub | bougies `OANDA:USD_JPY` refusées (« You don't have access to this resource ») | bougies forex réservées à l'offre payante |
+| Dukascopy | fichiers M1 refusés (« Too Many Requests ») | accès restreint, renvoi vers un stockage Amazon S3 payé au téléchargement |
+
+Pistes étudiées avec le trader :
+- **MT5 (compte démo)** : pas d'API serveur officielle sous Linux. Il faudrait le terminal sous Wine sur le VPS (lourd pour 4 Go, fragile) ou un relais payant (MetaApi, qui détiendrait le mot de passe). Écarté.
+- **cTrader** : API officielle, gratuite, lecture seule par portée. Retenu (option 5), sur un compte démo IC Markets. Un compte de prop firm n'est pas confirmé avec l'API.
+- **Garder FXCM et Dukascopy comme candidats lancés depuis le VPS** : écarté par le trader pour garder un seul candidat simple.
+
+Choix du trader pendant cette révision : JSON sur WebSocket avec un petit client maison (la bibliothèque officielle repose sur Twisted, qui s'accorde mal avec asyncio), jeton renouvelé et gardé en base, bougie clôturée demandée chaque minute plutôt que poussée, historique pris tel que le courtier le donne (jusqu'à 2 ans), mesure et test du direct lancés depuis le VPS.
+
+La logique de l'option 1 reste : on mesure l'écart avec OANDA avant d'adopter, mais sur un seul candidat. Le plan B est inchangé : si cTrader n'atteint pas le seuil, on le garde et on l'indique.
+
+Vérification des docs cTrader du 28/09/2026 (sous agent de recherche, notes dans `docs/.agent-cache/research/ctrader-open-api.md`) : bougies construites sur le bid, 14 000 bougies au plus par requête (troncature silencieuse au delà), pas de profondeur documentée (elle dépend du courtier), 5 requêtes d'historique par seconde et par connexion, jeton d'environ 30 jours dont le renouvellement invalide l'ancien, portées `accounts` (lecture) et `trading`, hôtes `demo.ctraderapi.com` et `live.ctraderapi.com` (5035 protobuf, 5036 JSON), maintien de connexion toutes les 10 secondes.
 
 ## Vérification web du 26/09/2026
 
@@ -104,7 +139,13 @@ Faite par un sous agent de recherche. Certaines pages officielles étaient bloqu
 - Une seule source de vérité par série (ne pas mélanger deux flux dans une série).
 - Insertion idempotente et données immuables une fois lues par le moteur.
 
-**Links** (trouvés par la recherche du 26/09/2026) :
+**Links** (vérifiés par la recherche du 28/09/2026) :
+- cTrader Open API, données de symboles et bougies : https://help.ctrader.com/open-api/symbol-data/
+- cTrader Open API, authentification du compte : https://help.ctrader.com/open-api/account-authentication/
+- cTrader Open API, hôtes et ports : https://help.ctrader.com/open-api/proxies-endpoints/
+- cTrader Open API, messages JSON : https://help.ctrader.com/open-api/sending-receiving-json/
+
+**Links** (trouvés par la recherche du 26/09/2026, historique) :
 - cTrader Open API : https://openapi.ctrader.com/
 - Dukascopy, données historiques : https://www.dukascopy.com/wiki/en/development/strategy-api/historical-data/
 - Finnhub, problème de bougies OANDA : https://github.com/finnhubio/Finnhub-API/issues/100
