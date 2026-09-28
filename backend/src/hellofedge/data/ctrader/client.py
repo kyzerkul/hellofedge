@@ -96,6 +96,9 @@ class CTraderClient:
         # Compte authentifié sur cette connexion. Remis à None à chaque nouvelle
         # connexion, ou quand cTrader signale que le compte ou le jeton ne vaut plus.
         self.authorized_account: int | None = None
+        # Augmente à chaque connexion ouverte : ce qui a été lu sur une connexion
+        # (le symbole) est relu sur la suivante.
+        self.generation = 0
 
     @property
     def connected(self) -> bool:
@@ -122,6 +125,7 @@ class CTraderClient:
                 raise FeedUnavailable(
                     f"cTrader injoignable : {type(exc).__name__}", "reseau"
                 ) from exc
+            self.generation += 1
             self._tasks = [
                 asyncio.create_task(self._read(self._ws)),
                 asyncio.create_task(self._heartbeat(self._ws)),

@@ -44,6 +44,7 @@ CHUNK = timedelta(days=7)
 MAX_DIGITS = 3
 
 Authorize = Callable[[CTraderClient, int], Awaitable[None]]
+Maintain = Callable[[CTraderClient], Awaitable[None]]
 
 
 @dataclass(frozen=True)
@@ -99,6 +100,7 @@ class CTraderFeed:
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
         chunk: timedelta = CHUNK,
         max_bars: int = MAX_BARS_PER_REQUEST,
+        maintain: Maintain | None = None,
     ) -> None:
         self.client = client
         self.account_id = account_id
@@ -107,7 +109,9 @@ class CTraderFeed:
         self._clock = clock
         self._chunk = chunk
         self._max_bars = max_bars
+        self._maintain = maintain
         self._symbol: Symbol | None = None
+        self._symbol_generation = -1
         # Direct et rattrapage partagent la connexion : une seule ouverture à la fois.
         self._ready_lock = asyncio.Lock()
 
@@ -118,13 +122,26 @@ class CTraderFeed:
         """Connexion ouverte, compte authentifié, symbole connu."""
         async with self._ready_lock:
             if not self.client.connected:
-                self._symbol = None
                 await self.client.connect()
             if self.client.authorized_account != self.account_id:
                 await self._authorize(self.client, self.account_id)
-            if self._symbol is None:
+            if (
+                self._symbol is None
+                or self._symbol_generation != self.client.generation
+            ):
                 self._symbol = await self._load_symbol()
+                self._symbol_generation = self.client.generation
             return self._symbol
+
+    async def maintain(self) -> None:
+        """Entretien appelé par le `worker` (renouvellement du jeton). Sans effet si
+        aucun entretien n'est prévu, comme pour les commandes ponctuelles."""
+        if self._maintain is None:
+            return
+        async with self._ready_lock:
+            if not self.client.connected:
+                await self.client.connect()
+            await self._maintain(self.client)
 
     async def _load_symbol(self) -> Symbol:
         listing = await self.client.request(

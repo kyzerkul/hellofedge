@@ -51,11 +51,19 @@ class PriceFeed(Protocol):
     # Prix fourni par la source : bid, ou mid si elle ne donne rien d'autre.
     price_kind: PriceKind
 
+    async def aclose(self) -> None:
+        """Ferme la connexion au fournisseur, s'il y en a une."""
+        ...
+
     async def history(self, start: datetime, end: datetime) -> list[Candle]:
         """Bougies M1 de `start` (inclus) à `end` (exclu), deux heures UTC.
 
         Triées, datées à l'ouverture de leur minute, en UTC, sans doublon.
         """
+        ...
+
+    async def maintain(self) -> None:
+        """Entretien périodique demandé par le `worker` (jeton…). Peut ne rien faire."""
         ...
 
     async def closed_since(self, after: datetime) -> list[Candle]:

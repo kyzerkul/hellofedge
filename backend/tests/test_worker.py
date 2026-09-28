@@ -82,8 +82,10 @@ class TestHealthCheck:
 
 
 def worker_env(db_url: str, heartbeat_file: Path) -> dict[str, str]:
+    # Sans réglages cTrader : le worker tourne sans flux (le flux est testé à part).
+    env = {k: v for k, v in os.environ.items() if not k.startswith("CTRADER_")}
     return {
-        **os.environ,
+        **env,
         "DATABASE_URL": db_url,
         "WORKER_HEARTBEAT_FILE": str(heartbeat_file),
         "WORKER_HEARTBEAT_SECONDS": "1",
@@ -173,6 +175,9 @@ class TestSingleWorker:
         assert code == 0
         assert [e["msg"] for e in entries] == [
             "worker démarré, verrou obtenu",
+            "source de prix non configurée, le worker tourne sans flux : "
+            "CTRADER_ACCOUNT_ID est requis : `hellofedge feed ctrader-accounts` "
+            "liste les comptes liés au jeton",
             "worker arrêté proprement",
         ]
 

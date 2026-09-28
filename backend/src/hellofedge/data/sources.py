@@ -4,6 +4,8 @@ Le reste du code demande une `PriceFeed` ici et ne connaît jamais le fournisseu
 Ajouter une source = un adaptateur de plus et une ligne dans `open_feed`.
 """
 
+from datetime import UTC, datetime
+
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from hellofedge.config import Settings
@@ -30,8 +32,13 @@ def make_client(settings: Settings) -> CTraderClient:
     )
 
 
-def open_feed(settings: Settings, engine: AsyncEngine) -> ctrader_feed.CTraderFeed:
-    """La source nommée par `PRICE_SOURCE`, pas encore connectée."""
+def open_feed(
+    settings: Settings, engine: AsyncEngine, *, renew_token: bool = False
+) -> ctrader_feed.CTraderFeed:
+    """La source nommée par `PRICE_SOURCE`, pas encore connectée.
+
+    `renew_token` est réservé au `worker` : seul lui renouvelle le jeton.
+    """
     if settings.price_source != ctrader_feed.SOURCE:
         raise ConfigMissing(f"PRICE_SOURCE inconnue : {settings.price_source!r}")
     if settings.ctrader_account_id is None:
@@ -43,9 +50,13 @@ def open_feed(settings: Settings, engine: AsyncEngine) -> ctrader_feed.CTraderFe
     async def authorize(client: CTraderClient, account_id: int) -> None:
         await ctoken.authorize_account(engine, client, account_id)
 
+    async def renew(client: CTraderClient) -> None:
+        await ctoken.refresh_if_needed(engine, client, settings, datetime.now(UTC))
+
     return ctrader_feed.CTraderFeed(
         make_client(settings),
         settings.ctrader_account_id,
         settings.ctrader_symbol,
         authorize,
+        maintain=renew if renew_token else None,
     )

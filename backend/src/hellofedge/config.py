@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     ctrader_refresh_token: SecretStr | None = None
     ctrader_symbol: str = "USDJPY"
 
+    # Jours de fermeture du marché, dates fixes `MM-JJ` séparées par des virgules.
+    market_holidays: str = "12-25,01-01"
+
 
 @lru_cache
 def get_settings() -> Settings:

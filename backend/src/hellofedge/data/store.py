@@ -2,24 +2,34 @@
 
 - Une seule bougie par `source` et par minute : l'insertion ignore une minute déjà
   stockée, relancer un chargement ne crée donc aucun doublon.
+- Avec `notify`, chaque nouvelle bougie envoie `NOTIFY candle_m1` avec
+  `{"source": ..., "ts_open": "2026-08-24T10:47:00Z"}`, livré à la validation.
 - Une bougie stockée n'est **jamais réécrite**. Si le fournisseur renvoie plus tard une
   autre valeur pour la même minute, la différence va dans `candle_revision` (une seule
   fois par valeur reçue), et la bougie stockée reste celle que le moteur a vue.
 """
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from hellofedge.data.candle import Candle
 from hellofedge.data.models import REVISED_FIELDS, CandleM1, CandleRevision
 
+CHANNEL = "candle_m1"
+
 # Lignes par requête : sous la limite de 65 535 paramètres de PostgreSQL.
 BATCH = 1000
+
+
+def notify_payload(source: str, ts_open: datetime) -> str:
+    stamp = ts_open.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return json.dumps({"source": source, "ts_open": stamp})
 
 
 @dataclass(frozen=True)
@@ -36,6 +46,7 @@ async def store_candles(
     *,
     backfilled: bool,
     now: datetime,
+    notify: bool = False,
 ) -> StoreResult:
     inserted: list[datetime] = []
     ignored = revisions = 0
@@ -43,6 +54,12 @@ async def store_candles(
         batch = candles[i : i + BATCH]
         async with engine.begin() as conn:
             new = await _insert(conn, source, batch, backfilled, now)
+            if notify:
+                for ts in sorted(new):
+                    await conn.execute(
+                        text("SELECT pg_notify(:channel, :payload)"),
+                        {"channel": CHANNEL, "payload": notify_payload(source, ts)},
+                    )
             already = [c for c in batch if c.ts_open not in new]
             revisions += await _record_revisions(conn, source, already, now)
         inserted += sorted(new)

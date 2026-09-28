@@ -418,3 +418,43 @@ class TestOpenFeed:
     def test_missing_account_id_is_a_clear_message(self):
         with pytest.raises(ConfigMissing, match="CTRADER_ACCOUNT_ID"):
             open_feed(self.base(ctrader_account_id=None), engine=None)  # type: ignore[arg-type]
+
+
+class TestMaintain:
+    def settings(self) -> Settings:
+        return Settings(
+            database_url="postgresql://x@localhost/x",
+            ctrader_client_id="app-id",
+            ctrader_client_secret="app-secret",
+            ctrader_account_id=ACCOUNT,
+        )
+
+    @pytest.mark.asyncio
+    async def test_commands_never_renew_the_token(self):
+        feed = open_feed(self.settings(), engine=None)  # type: ignore[arg-type]
+
+        await feed.maintain()
+
+        assert not feed.client.connected
+
+    def test_only_the_worker_asks_for_renewal(self):
+        feed = open_feed(self.settings(), engine=None, renew_token=True)  # type: ignore[arg-type]
+
+        assert feed._maintain is not None
+
+    @pytest.mark.asyncio
+    async def test_maintain_connects_then_runs_the_hook(self):
+        seen = []
+
+        async def hook(client):
+            seen.append(client.connected)
+
+        async with FakeCTrader() as fake:
+            client = CTraderClient(fake.url, "app-id", "app-secret")
+            feed = CTraderFeed(client, ACCOUNT, "USDJPY", authorize, maintain=hook)
+            try:
+                await feed.maintain()
+            finally:
+                await feed.aclose()
+
+        assert seen == [True]

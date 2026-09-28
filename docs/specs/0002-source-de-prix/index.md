@@ -224,8 +224,8 @@ Approche Tracer Bullet : d'abord la mesure (elle décide de l'adoption), puis un
 6. Écrire `hellofedge feed live-test` et `hellofedge feed compare` (écart, bougies voisines, profondeur d'historique), les lancer sur le VPS, écrire `exemples/mesure_sources.md`, puis faire valider l'adoption par le trader. Reporter l'écart mesuré dans la section *Decision*. Satisfait **AC-2**, **AC-7**, **AC-12**. (Commandes écrites et testées contre le faux serveur ; lancement sur le VPS et validation du trader en attente.)
 7. Écrire la migration Alembic de `candle_m1`, `feed_outage` et `candle_revision`. Satisfait **AC-3**, **AC-5**, **AC-10**. (Fait, migration appliquée et vérifiée sur une base de test.)
 8. Écrire `hellofedge feed backfill` (par semaine, insertion idempotente, une bougie existante n'est pas réécrite, les révisions vont dans `candle_revision`), puis charger l'historique disponible, jusqu'à 2 ans. Satisfait **AC-3**, **AC-10**. (Commande écrite et testée ; le chargement réel se fait sur le VPS.)
-9. Écrire la boucle du direct dans le `worker` (seconde 3, nouvelles tentatives, `NOTIFY` en JSON, journal des interrogations). Satisfait **AC-4**, **AC-8**.
-10. Ajouter la détection de coupure (causes, marché ouvert, rollover, jours fériés, fermeture au début du week-end) et le rattrapage au retour et au démarrage. Satisfait **AC-5**, **AC-6**.
+9. Écrire la boucle du direct dans le `worker` (seconde 3, nouvelles tentatives, `NOTIFY` en JSON, journal des interrogations). Satisfait **AC-4**, **AC-8**. (Fait, testé en temps simulé contre une vraie base.)
+10. Ajouter la détection de coupure (causes, marché ouvert, rollover, jours fériés, fermeture au début du week-end) et le rattrapage au retour et au démarrage. Satisfait **AC-5**, **AC-6**. (Fait, testé en temps simulé contre une vraie base.)
 11. Ajouter `GET /api/feed/status`. Satisfait **AC-11**.
 12. Mesurer le délai du direct pendant une journée complète, du mardi au jeudi, avec le détail par session, et le noter dans le rapport. Satisfait **AC-4**.
 
