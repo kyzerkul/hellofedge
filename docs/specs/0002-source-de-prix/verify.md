@@ -42,3 +42,11 @@ _Étapes du jeton (étape 12 du plan). Les commandes demandent une base jetable 
 
 ## Acceptance-criteria coverage
 - AC-13 : second essai sur refus du renouvellement et verrou du `--reseed` construits et testés ; le renouvellement réel attend le VPS
+
+## État du flux (étape 11) · ajouté le 2026-09-28
+- [ ] `uv run pytest tests/test_feed_status.py` (avec `TEST_DATABASE_URL`) → 5 tests passent → AC-11
+- [ ] `curl -i https://<domaine>/api/feed/status` sans connexion → 401, aucun contenu de flux → AC-11, modèle de sécurité
+- [ ] Une fois la Connexion (scope n°6) en place, même appel connecté → `{"source": "ctrader_icmarkets", "last_ts_open": …, "outage": null}` → AC-11
+- [ ] Changer `PRICE_SOURCE` puis relancer l'`api` → `source` suit la variable, et `last_ts_open` ne compte que les bougies de cette source → AC-8, AC-11 (valeur « source active »)
+- [ ] Couper le flux 2 minutes en heures de marché → `outage` affiche `started_at` et la `cause`, puis revient à `null` au retour des bougies → AC-5, AC-11 (valeur « coupure en cours »)
+- [ ] Lire la réponse → aucun jeton, aucun identifiant de compte → modèle de sécurité
