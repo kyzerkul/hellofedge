@@ -1,6 +1,6 @@
 # 0002. Source de prix : cTrader (démo IC Markets), mesurée contre OANDA, bougies M1 bid
 
-**Date**: 2026-09-26 · mise à jour le 2026-09-28 (FXCM, Finnhub et Dukascopy remplacés par cTrader)
+**Date**: 2026-09-26 · mise à jour le 2026-09-28 (FXCM, Finnhub et Dukascopy remplacés par cTrader ; règle d'expiration du premier jeton)
 **Status**: In Progress
 
 ## Summary
@@ -27,7 +27,7 @@ OANDA étant impossible, la source de prix sera l'API officielle et gratuite de 
 - **AC-10**: Une bougie déjà stockée n'est jamais réécrite. Si le fournisseur renvoie plus tard une valeur différente pour la même minute, la différence est enregistrée dans `candle_revision`, et la bougie stockée reste celle que le moteur a vue.
 - **AC-11**: Le cockpit peut afficher l'état du flux : source active, heure de la dernière bougie, coupure en cours s'il y en a une.
 - **AC-12**: L'adaptateur convertit l'heure cTrader (`utcTimestampInMinutes`, minutes Unix de l'ouverture) en UTC et date chaque bougie à l'**ouverture** de sa minute. Un test le vérifie sur une date d'hiver et une date d'été, et la mesure compare aussi chaque point aux bougies voisines (une minute avant et après) pour révéler un décalage d'une minute.
-- **AC-13**: Le jeton cTrader est renouvelé tout seul avant son expiration (7 jours avant). Le nouveau jeton est enregistré en base avant tout usage, un seul renouvellement peut avoir lieu à la fois, et aucun jeton n'apparaît dans les journaux ni dans une réponse de l'API. Si le renouvellement est refusé, une coupure de cause `auth` s'ouvre.
+- **AC-13**: Le jeton cTrader est renouvelé tout seul avant son expiration (7 jours avant). Le nouveau jeton est enregistré en base avant tout usage, un seul renouvellement peut avoir lieu à la fois, et aucun jeton n'apparaît dans les journaux ni dans une réponse de l'API. Le premier jeton, venu de l'environnement, est noté comme expirant 6 jours après son enregistrement, pour que le `worker` le renouvelle dès la première minute qu'il traite et reçoive la vraie date de cTrader. Si le renouvellement est refusé, une coupure de cause `auth` s'ouvre.
 - **AC-14**: Le client cTrader n'envoie que les messages de sa **liste blanche** (authentification de l'application et du compte, version, liste et détail des symboles, bougies historiques, renouvellement du jeton, maintien de connexion). Un test échoue si un autre type de message peut être envoyé.
 
 ## Decision
@@ -39,7 +39,7 @@ Le fournisseur est cTrader, par son API officielle et gratuite (Spotware), en **
 Décisions prises avec le trader (tu peux les contester) :
 - **Lecture du direct** : à la seconde 3 de chaque minute, on demande la bougie M1 clôturée par la même requête que l'historique, puis toutes les 2 secondes jusqu'à ce qu'elle soit disponible, pendant 60 secondes au plus. Le rejeu et le direct lisent ainsi exactement la même bougie. Le runner up, la bougie poussée en direct, est plus rapide mais peut différer légèrement de la bougie d'historique.
 - **Profondeur d'historique** : on prend ce que le courtier fournit, jusqu'à 2 ans, et on note la profondeur obtenue dans le rapport. Les 10 trades (août 2026) sont couverts de toute façon.
-- **Jeton** : le jeton d'accès expire après environ 30 jours, et le renouveler invalide l'ancien. Le premier jeton vient des variables d'environnement, puis le `worker` le renouvelle et garde le dernier dans la table `provider_token`. C'est une exception assumée à la règle « secrets dans l'environnement », acceptable parce que le jeton est en lecture seule sur un compte démo.
+- **Jeton** : le jeton d'accès expire après environ 30 jours, et le renouveler invalide l'ancien. Le premier jeton vient des variables d'environnement, puis le `worker` le renouvelle et garde le dernier dans la table `provider_token`. Sa date de fin est inconnue (l'environnement ne la donne pas) : on la suppose à 6 jours, sous le seuil de renouvellement, ce qui force un renouvellement immédiat. Le runner up, demander la date au trader dans une variable de plus, ajoute une saisie qu'on peut oublier ou mal recopier. C'est une exception assumée à la règle « secrets dans l'environnement », acceptable parce que le jeton est en lecture seule sur un compte démo.
 - **Révisions** : la première valeur stockée fait foi (AC-10). Le runner up, réécrire la bougie, changerait après coup ce que le moteur a vu.
 - **Fenêtre du rollover** : de 16h58 à 17h10, heure de New York. À cette heure, beaucoup de fournisseurs n'ont pas de prix pendant quelques minutes. Sans cette fenêtre, une fausse panne tomberait chaque soir.
 - **Minutes sans prix** : on ne fabrique pas de bougie artificielle. TradingView n'en affiche pas non plus. Une bougie M3 ou M5 dont une minute manque est construite avec les minutes présentes, comme TradingView.
@@ -131,10 +131,13 @@ Validation et corrections : le trader valide le fichier avant la mesure (AC-1). 
 - **Liste blanche** (AC-14) : le client refuse d'envoyer tout message hors de sa liste. Aucun message d'ordre, de position ou de compte en écriture n'y figure. La portée `accounts` du jeton l'interdit déjà côté cTrader, et la liste blanche l'interdit côté code.
 - **Jeton** (AC-13) :
   - Au démarrage, si `provider_token` est vide, on l'initialise depuis `CTRADER_ACCESS_TOKEN` et `CTRADER_REFRESH_TOKEN`. Après une régénération manuelle, `hellofedge feed ctrader-token --reseed` remplace la ligne par les valeurs de l'environnement.
-  - **Seul le `worker` renouvelle**, quand il reste moins de 7 jours, sous un verrou PostgreSQL (advisory lock) **qui lui est propre**, distinct du verrou « un seul `worker` » de la spec 0001, et tenu seulement le temps du renouvellement. Le nouveau couple est écrit en base avant d'être utilisé.
+  - **Expiration du premier jeton** : l'environnement ne donne pas sa date de fin. À l'initialisation comme au `--reseed`, `expires_at` = heure de l'enregistrement + 6 jours (`SEED_LIFETIME`). Cette durée est choisie entre deux seuils : sous les 7 jours du renouvellement, donc le `worker` le renouvelle dès la première minute qu'il traite et remplace la date supposée par la vraie (`expiresIn` de cTrader) ; au dessus du jour minimal des commandes ponctuelles, donc `feed compare`, `feed backfill` et les autres peuvent s'en servir tout de suite. Un test garantit l'ordre 1 jour < 6 jours < 7 jours.
+  - Limite assumée : si le `worker` ne tourne pas, la date supposée peut être fausse dans les deux sens. Un jeton en réalité plus ancien est refusé par cTrader (erreur d'authentification claire), un jeton encore valable est refusé par les commandes au bout de 5 jours (message qui invite à lancer le `worker` ou à refaire `--reseed`). Dans les deux cas, rien n'est faux dans les bougies.
+  - **Seul le `worker` renouvelle**, quand il reste moins de 7 jours. Il vérifie le jeton à la première minute qu'il traite, puis toutes les heures (`MAINTAIN_EVERY`). Il renouvelle sous un verrou PostgreSQL (advisory lock) **qui lui est propre**, distinct du verrou « un seul `worker` » de la spec 0001, et tenu seulement le temps du renouvellement. Le nouveau couple est écrit en base avant d'être utilisé.
   - Si l'écriture en base échoue après un renouvellement réussi (l'ancien jeton est déjà invalide), on réessaie l'écriture plusieurs fois avec le jeton gardé en mémoire. En dernier recours, on ouvre une coupure `auth` et le journal indique la marche à suivre (régénérer le jeton, puis `--reseed`), sans jamais écrire le jeton.
   - Les commandes ponctuelles lisent le jeton en base et ne renouvellent jamais. S'il expire dans moins d'un jour, elles s'arrêtent avec un message clair.
-  - Sur un refus d'authentification, on relit d'abord le jeton en base (il vient peut-être d'être renouvelé) et on réessaie une fois. La coupure `auth` ne s'ouvre qu'après ce second refus.
+  - Sur un refus d'authentification, on relit d'abord le jeton en base (il vient peut-être d'être renouvelé) et on réessaie une fois. La coupure `auth` ne s'ouvre qu'après ce second refus. La même règle vaut pour un refus du **renouvellement** lui-même : on relit la base (un `--reseed` vient peut-être de remplacer le jeton), et si le jeton relu a changé et n'a plus besoin d'être renouvelé, on s'arrête là ; sinon on réessaie une fois avec le jeton relu. Le second refus ouvre la coupure `auth`.
+  - `--reseed` prend le **même verrou** que le renouvellement avant d'écrire. Ainsi un renouvellement en cours ne peut pas écraser le jeton que tu viens de remettre, et le `--reseed` ne peut pas écraser un jeton tout juste renouvelé sans que tu le saches (il attend la fin du renouvellement, puis écrit).
 
 **Commandes et surface** :
 | Élément | Forme | Entrées clés | Sortie | Accès | Erreurs clés |
@@ -167,6 +170,7 @@ Validation et corrections : le trader valide le fichier avant la mesure (AC-1). 
 | Toutes | prix d'une bougie | `low` + deltas de cTrader, / 100000, arrondis aux décimales du symbole |
 | Toutes | heure d'ouverture d'une bougie | `utcTimestampInMinutes` de cTrader |
 | Toutes | jeton d'accès | `provider_token` (initialisé depuis `CTRADER_ACCESS_TOKEN` et `CTRADER_REFRESH_TOKEN`) |
+| Toutes | date d'expiration du jeton | premier jeton : heure d'enregistrement + 6 jours (supposée, décidé ici) ; jeton renouvelé : heure du renouvellement + `expiresIn` renvoyé par cTrader |
 | Toutes | compte lu | `CTRADER_ACCOUNT_ID` |
 | Direct | minute attendue | horloge UTC du `worker` (chrony, spec 0001) : la minute qui vient de se terminer |
 | Direct | marché ouvert ou fermé | dérivé de l'heure `America/New_York` : fermé du vendredi 17h00 au dimanche 17h00, plus `MARKET_HOLIDAYS` |
@@ -206,7 +210,7 @@ Validation et corrections : le trader valide le fichier avant la mesure (AC-1). 
 - M3 et M5 : l'agrégation d'un M1 connu donne les bons OHLC calés sur :00, :03, :06, y compris quand une minute manque. Vérifie **AC-7**.
 - Décodage cTrader : une bougie (`low` et deltas connus, `utcTimestampInMinutes` d'un jour de janvier puis de juillet) donne les bons prix à 3 décimales et le bon `ts_open` UTC. Vérifie **AC-12**.
 - Troncature : une tranche qui renvoie 14 000 bougies est redécoupée, et il ne manque aucune minute. Vérifie **AC-3**.
-- Jeton : à 6 jours de l'expiration, le faux serveur reçoit un seul renouvellement même si deux tâches le demandent en même temps, et le nouveau jeton est en base. Une commande ponctuelle ne renouvelle jamais. Un refus d'authentification relit la base et réessaie une fois avant d'ouvrir une coupure `auth`. Vérifie **AC-13**.
+- Jeton : à 6 jours de l'expiration, le faux serveur reçoit un seul renouvellement même si deux tâches le demandent en même temps, et le nouveau jeton est en base. Une commande ponctuelle ne renouvelle jamais. Un refus d'authentification relit la base et réessaie une fois avant d'ouvrir une coupure `auth`. Premier jeton : après initialisation ou `--reseed`, `expires_at` vaut l'heure d'enregistrement + 6 jours, une commande ponctuelle l'accepte, et le `worker` le renouvelle dès la première minute qu'il traite et enregistre la date donnée par cTrader. Un renouvellement refusé relit la base et réessaie une fois avant la coupure `auth`. Un `--reseed` lancé pendant un renouvellement attend la fin de celui-ci, et la ligne finale est celle du `--reseed`. Vérifie **AC-13**.
 - Bougie en formation : le faux serveur renvoie aussi la bougie de la minute en cours. `closed_since` ne la retourne pas. Vérifie **AC-4**.
 - Liste blanche : demander au client d'envoyer un message hors liste lève une erreur, et le test des mots interdits échoue si l'on ajoute `def place_order`. Vérifie **AC-9**, **AC-14**.
 - Week-end : une coupure ouverte le vendredi à 16h50, heure de New York, est fermée à 17h00 avec `fermeture_marche`. Vérifie **AC-5**.
@@ -227,7 +231,8 @@ Approche Tracer Bullet : d'abord la mesure (elle décide de l'adoption), puis un
 9. Écrire la boucle du direct dans le `worker` (seconde 3, nouvelles tentatives, `NOTIFY` en JSON, journal des interrogations). Satisfait **AC-4**, **AC-8**. (Fait, testé en temps simulé contre une vraie base.)
 10. Ajouter la détection de coupure (causes, marché ouvert, rollover, jours fériés, fermeture au début du week-end) et le rattrapage au retour et au démarrage. Satisfait **AC-5**, **AC-6**. (Fait, testé en temps simulé contre une vraie base.)
 11. Ajouter `GET /api/feed/status`. Satisfait **AC-11**. (Fait. La route répond 401 à tous tant que la Connexion, scope n°6, n'existe pas.)
-12. Mesurer le délai du direct pendant une journée complète, du mardi au jeudi, avec le détail par session, et le noter dans le rapport. Satisfait **AC-4**.
+12. Aligner le jeton sur la règle complétée le 28/09 : relecture de la base et second essai sur un refus du renouvellement, verrou du renouvellement pris par `--reseed`, plus leurs tests. Satisfait **AC-13**.
+13. Mesurer le délai du direct pendant une journée complète, du mardi au jeudi, avec le détail par session, et le noter dans le rapport. Satisfait **AC-4**.
 
 ## Consequences
 
