@@ -21,3 +21,24 @@ _Étapes tirées des critères d'acceptation de la spec 0002. `/check verify` le
 
 ## Acceptance-criteria coverage
 - AC-1 : fichier écrit (77 points), validation du trader en attente · AC-7 : agrégation construite et testée sur des bougies connues ; le contrôle sur les vrais points M3 et M5 attend la mesure · AC-9 : garde en place avant le premier adaptateur · AC-2, AC-3, AC-4, AC-5, AC-6, AC-8, AC-10, AC-11, AC-12 : pas encore construits
+
+# Verify: Source de prix · jeton cTrader · spec 0002 · updated 2026-09-28
+_Étapes du jeton (étape 12 du plan). Les commandes demandent une base jetable dans `TEST_DATABASE_URL`._
+
+## Commandes (depuis `backend/`)
+- [ ] `uv run pytest tests/test_ctrader_token.py` → 21 tests passent → AC-13
+- [ ] `-k renewal_refusal_rereads` → un premier refus du renouvellement est suivi d'un seul second essai, et le nouveau jeton est en base → AC-13
+- [ ] `-k second_renewal_refusal` → deux refus : `FeedAuthError` de cause `auth` (la coupure `auth` s'ouvre), le jeton en base ne change pas, aucun jeton dans les journaux → AC-13
+- [ ] `-k reread_token_is_fresh` → si le jeton relu n'a plus besoin d'être renouvelé, aucun second essai n'est envoyé → AC-13
+- [ ] `-k retries_with_a_reseeded_token` → un `--reseed` lancé pendant un renouvellement refusé passe entre les deux essais, et le second essai part avec le jeton du `--reseed` → AC-13
+- [ ] `-k reseed_waits` → un `--reseed` lancé pendant un renouvellement attend sa fin, et la ligne finale est celle du `--reseed` → AC-13, invariant « un seul renouvellement à la fois »
+
+## Sur le VPS (après la création de l'application cTrader)
+- [ ] Lancer le `worker` avec un premier jeton neuf → dans l'heure, le journal dit « jeton cTrader renouvelé » avec une date de fin d'environ 30 jours, et `provider_token.expires_at` a changé → AC-13 (date venue de cTrader)
+- [ ] `docker compose run … hellofedge feed ctrader-token --reseed` pendant que le `worker` tourne → la commande se termine, `provider_token` contient le jeton de l'environnement, puis le `worker` le renouvelle au passage suivant → AC-13
+
+## Sources des valeurs
+- [ ] Date d'expiration : après `--reseed`, `expires_at` = heure de la commande + 6 jours ; après un renouvellement, heure du renouvellement + `expiresIn` → AC-13
+
+## Acceptance-criteria coverage
+- AC-13 : second essai sur refus du renouvellement et verrou du `--reseed` construits et testés ; le renouvellement réel attend le VPS

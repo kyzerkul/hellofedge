@@ -231,7 +231,7 @@ Approche Tracer Bullet : d'abord la mesure (elle décide de l'adoption), puis un
 9. Écrire la boucle du direct dans le `worker` (seconde 3, nouvelles tentatives, `NOTIFY` en JSON, journal des interrogations). Satisfait **AC-4**, **AC-8**. (Fait, testé en temps simulé contre une vraie base.)
 10. Ajouter la détection de coupure (causes, marché ouvert, rollover, jours fériés, fermeture au début du week-end) et le rattrapage au retour et au démarrage. Satisfait **AC-5**, **AC-6**. (Fait, testé en temps simulé contre une vraie base.)
 11. Ajouter `GET /api/feed/status`. Satisfait **AC-11**. (Fait. La route répond 401 à tous tant que la Connexion, scope n°6, n'existe pas.)
-12. Aligner le jeton sur la règle complétée le 28/09 : relecture de la base et second essai sur un refus du renouvellement, verrou du renouvellement pris par `--reseed`, plus leurs tests. Satisfait **AC-13**.
+12. Aligner le jeton sur la règle complétée le 28/09 : relecture de la base et second essai sur un refus du renouvellement, verrou du renouvellement pris par `--reseed`, plus leurs tests. Satisfait **AC-13**. (Fait, testé contre le faux serveur et une vraie base.)
 13. Mesurer le délai du direct pendant une journée complète, du mardi au jeudi, avec le détail par session, et le noter dans le rapport. Satisfait **AC-4**.
 
 ## Consequences

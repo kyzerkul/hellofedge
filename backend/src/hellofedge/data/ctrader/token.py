@@ -11,14 +11,18 @@ Règles de la spec 0002 :
   l'ancien jeton : le nouveau est écrit en base avant d'être utilisé.
 - Les commandes ponctuelles ne renouvellent jamais. S'il reste moins de
   `COMMAND_MIN_VALIDITY`, elles s'arrêtent avec un message clair.
-- Sur un refus d'authentification, on relit la base et on réessaie une fois.
+- Sur un refus d'authentification, on relit la base et on réessaie une fois. De même
+  pour un refus du renouvellement : le verrou est relâché, puis repris, pour qu'un
+  `--reseed` en attente passe d'abord.
+- `--reseed` prend le même verrou que le renouvellement avant d'écrire.
 
 Aucun jeton n'apparaît jamais dans un journal ni dans un message d'erreur.
 """
 
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -91,6 +95,27 @@ def env_token(settings: Settings, now: datetime) -> Token:
     )
 
 
+@asynccontextmanager
+async def token_lock(engine: AsyncEngine) -> AsyncIterator[None]:
+    """Verrou du jeton, pris par le renouvellement et par `--reseed`.
+
+    PostgreSQL sert les demandes en attente dans l'ordre : qui relâche puis reprend
+    le verrou passe après celles qui attendaient déjà.
+    """
+    async with engine.connect() as lock_conn:
+        await lock_conn.execute(
+            text("SELECT pg_advisory_lock(:k)"), {"k": TOKEN_LOCK_KEY}
+        )
+        await lock_conn.commit()
+        try:
+            yield
+        finally:
+            await lock_conn.execute(
+                text("SELECT pg_advisory_unlock(:k)"), {"k": TOKEN_LOCK_KEY}
+            )
+            await lock_conn.commit()
+
+
 async def load(engine: AsyncEngine) -> Token | None:
     async with engine.connect() as conn:
         row = (
@@ -146,9 +171,14 @@ async def ensure_seeded(
 
 
 async def reseed(engine: AsyncEngine, settings: Settings, now: datetime) -> Token:
-    """Remplace le jeton en base par celui de l'environnement (après une régénération manuelle)."""
+    """Remplace le jeton en base par celui de l'environnement (après une régénération manuelle).
+
+    Attend la fin d'un renouvellement en cours : ni l'un ni l'autre n'écrase l'autre
+    à son insu, et la ligne finale est celle du `--reseed`.
+    """
     token = env_token(settings, now)
-    await _write(engine, token, now, replace=True)
+    async with token_lock(engine):
+        await _write(engine, token, now, replace=True)
     log.info("jeton cTrader remplacé par celui de l'environnement")
     return token
 
@@ -198,23 +228,33 @@ async def refresh_if_needed(
 ) -> Token:
     """Renouvelle le jeton s'il reste moins de `RENEW_BEFORE`. Réservé au `worker`.
 
-    `client` doit être connecté (application authentifiée).
+    `client` doit être connecté (application authentifiée). Sur un refus du
+    renouvellement, on relâche le verrou, on le reprend et on relit la base : si un
+    `--reseed` a posé un jeton qui n'a plus besoin d'être renouvelé, on s'arrête là,
+    sinon on réessaie une fois avec le jeton relu. Le second refus remonte
+    (`FeedAuthError`, coupure `auth`).
     """
     await ensure_seeded(engine, settings, now)
-    async with engine.connect() as lock_conn:
-        await lock_conn.execute(
-            text("SELECT pg_advisory_lock(:k)"), {"k": TOKEN_LOCK_KEY}
-        )
-        await lock_conn.commit()
-        try:
-            # Relu sous le verrou : un autre passage vient peut-être de renouveler.
+    for attempt in (1, 2):
+        async with token_lock(engine):
+            # Relu sous le verrou : un autre passage ou un `--reseed` vient peut-être
+            # de le remplacer.
             current = await load(engine)
             assert current is not None
             if current.expires_at - now >= RENEW_BEFORE:
                 return current
-            payload = await client.request(
-                Msg.REFRESH_TOKEN_REQ, {"refreshToken": current.refresh_token}
-            )
+            try:
+                payload = await client.request(
+                    Msg.REFRESH_TOKEN_REQ, {"refreshToken": current.refresh_token}
+                )
+            except FeedAuthError:
+                if attempt == 2:
+                    raise
+                log.warning(
+                    "renouvellement du jeton cTrader refusé, nouvel essai avec le "
+                    "jeton relu en base"
+                )
+                continue
             renewed = Token(
                 str(payload["accessToken"]),
                 str(payload["refreshToken"]),
@@ -226,11 +266,7 @@ async def refresh_if_needed(
                 extra={"data": {"expires_at": renewed.expires_at.isoformat()}},
             )
             return renewed
-        finally:
-            await lock_conn.execute(
-                text("SELECT pg_advisory_unlock(:k)"), {"k": TOKEN_LOCK_KEY}
-            )
-            await lock_conn.commit()
+    raise AssertionError("inaccessible")
 
 
 async def authorize_account(

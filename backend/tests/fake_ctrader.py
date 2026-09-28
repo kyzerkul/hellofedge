@@ -2,11 +2,13 @@
 
 Par défaut il accepte tout et répond à chaque requête par sa réponse attendue, avec
 un contenu vide. Un test peut changer la réponse d'un type de message avec `on`.
+Une réponse peut être asynchrone, pour agir pendant que le client attend.
 """
 
 import asyncio
+import inspect
 import json
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from websockets.asyncio.server import Server, ServerConnection, serve
@@ -15,7 +17,7 @@ from hellofedge.data.ctrader.protocol import RESPONSE_OF, Msg
 
 # Une réponse : (payloadType, payload), ou None pour ne rien répondre.
 Reply = tuple[int, dict[str, Any]] | None
-Handler = Callable[[dict[str, Any]], Reply]
+Handler = Callable[[dict[str, Any]], Reply | Awaitable[Reply]]
 
 
 def error(code: str) -> Reply:
@@ -66,6 +68,8 @@ class FakeCTrader:
             handler = self.handlers.get(kind)
             if handler is not None:
                 reply = handler(frame.get("payload") or {})
+                if inspect.isawaitable(reply):
+                    reply = await reply
             else:
                 reply = (RESPONSE_OF[kind], {}) if kind in RESPONSE_OF else None
             if reply is None:

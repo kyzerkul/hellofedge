@@ -52,7 +52,7 @@ Remplacer OANDA par une source de bougies USD/JPY la plus proche possible du flu
 - [ ] Construire: `/develop source de prix`
   - [ ] Points de référence OANDA lus sur les captures et validés par le trader (AC-1)
   - [x] Client cTrader, jeton et adaptateur en lecture seule (AC-9, AC-12, AC-13, AC-14)
-  - [ ] Jeton : second essai sur un refus du renouvellement et verrou pris par `--reseed` (AC-13)
+  - [x] Jeton : second essai sur un refus du renouvellement et verrou pris par `--reseed` (AC-13)
   - [ ] Mesure sur le VPS contre les points OANDA, puis adoption de cTrader (AC-2, AC-7)
   - [ ] Tables, chargement de l'historique disponible (jusqu'à 2 ans) et révisions (AC-3, AC-10)
   - [x] Direct dans le `worker`, coupures, rattrapage et état du flux (AC-4, AC-5, AC-6, AC-8, AC-11)
