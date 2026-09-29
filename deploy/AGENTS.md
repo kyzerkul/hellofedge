@@ -4,8 +4,12 @@ La mise en production sur le VPS : `docker-compose.yml` et `Caddyfile` ici, `Doc
 
 ## Fichiers
 - `../Dockerfile` : image unique en deux étapes (Node 22 construit le cockpit, puis l'image Python 3.13). Elle sert l'`api`, le `worker` et la migration.
-- `docker-compose.yml` : `postgres`, `migrate` (ponctuel, profil `migrate`), `api`, `worker`, `caddy`.
+- `docker-compose.yml` : `postgres`, `migrate` (ponctuel, profil `migrate`), `api`, `worker`, `caddy`, et `tools` (commandes ponctuelles `hellofedge feed …`, profil `tools`, monte `exemples/`). Réseau Docker fixé en `172.30.0.0/24` : l'`api` ne croit les en têtes du proxy que venant de là (`FORWARDED_ALLOW_IPS`).
 - `Caddyfile` : HTTPS automatique pour `HELLOFEDGE_DOMAIN`, tout vers l'`api`.
+- `provision.sh` : prépare un VPS Ubuntu 24.04 neuf (mises à jour, chrony, pare feu, swap, Docker, utilisateur `deploy`, cron de sauvegarde). Relançable.
+- `backup.sh` : `pg_dump` compressé chaque nuit, 7 jours gardés.
+- `VPS.md` : le guide pas à pas du trader, de la création du VPS à la mesure cTrader.
+- `../.github/workflows/ci-deploy.yml` : tests à chaque push ; sur `main`, image `ghcr.io/kyzerkul/hellofedge:<commit>` puis déploiement SSH (sauté sans le secret `VPS_HOST`).
 
 ## Déployer (depuis `deploy/`)
 1. `docker compose pull`
@@ -18,6 +22,7 @@ La mise en production sur le VPS : `docker-compose.yml` et `Caddyfile` ici, `Doc
 - La base n'expose aucun port hors du réseau Docker.
 - Les versions des images sont fixées (pas de `latest`). L'image de l'application est `ghcr.io/kyzerkul/hellofedge:<commit>`.
 - Le flux en direct (SSE) doit être servi sous `/api/stream` : c'est la seule route que Caddy relaie sans tampon ni compression.
-- Pas encore en place : GitHub Actions, sauvegardes `pg_dump`, swap et chrony. Ils viendront avec le premier vrai déploiement.
+- Le `.env` du VPS est réécrit à chaque déploiement depuis les secrets GitHub (environnement `production`) : c'est là qu'on change une valeur, jamais à la main sur le VPS.
+- La documentation de l'API (`/api/docs`) est fermée en production ; `API_DOCS=true` la rouvre en local.
 
 _Drafted by /sync from the introducing change, worth a quick human pass._

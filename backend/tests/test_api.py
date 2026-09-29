@@ -103,3 +103,21 @@ class TestCockpitFiles:
 
         assert client.get("/").status_code == 404
         assert client.get("/api/health").status_code == 503
+
+
+class TestApiDocs:
+    """Revue du 2026-09-29 : la documentation de l'API n'est pas publique en production."""
+
+    @pytest.mark.parametrize("path", ["/api/docs", "/api/openapi.json", "/redoc"])
+    def test_closed_by_default(self, make_client, monkeypatch, path):
+        monkeypatch.delenv("API_DOCS", raising=False)
+
+        assert make_client(DOWN_URL).get(path).status_code == 404
+
+    def test_opens_only_when_asked(self, make_client, monkeypatch):
+        monkeypatch.setenv("API_DOCS", "true")
+
+        client = make_client(DOWN_URL)
+
+        assert client.get("/api/docs").status_code == 200
+        assert "/api/feed/status" in client.get("/api/openapi.json").json()["paths"]

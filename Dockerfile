@@ -33,4 +33,6 @@ USER hellofedge
 
 EXPOSE 8000
 # Par défaut : l'api. Le worker et la migration changent la commande dans docker-compose.yml.
-CMD ["uvicorn", "hellofedge.api.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# Les en têtes du proxy ne sont crus que pour les adresses de FORWARDED_ALLOW_IPS
+# (le réseau Docker de Caddy, fixé dans deploy/docker-compose.yml), jamais pour tous.
+CMD ["uvicorn", "hellofedge.api.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

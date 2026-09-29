@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     worker_heartbeat_seconds: int = 15
     worker_heartbeat_max_age_seconds: int = 120
 
+    # Documentation de l'API (/api/docs) : fermée par défaut, à ouvrir en local seulement.
+    api_docs: bool = False
+
     # Source de prix (spec 0002). Le moteur ne lit que la source active.
     price_source: str = "ctrader_icmarkets"
 

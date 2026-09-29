@@ -32,8 +32,11 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Hellofedge",
         lifespan=lifespan,
-        docs_url="/api/docs",
-        openapi_url="/api/openapi.json",
+        # Documentation de l'API fermée par défaut : l'api est en ligne sur le domaine
+        # du trader. `API_DOCS=true` la rouvre, pour le développement local.
+        docs_url="/api/docs" if settings.api_docs else None,
+        redoc_url=None,
+        openapi_url="/api/openapi.json" if settings.api_docs else None,
     )
 
     @app.get("/api/health")

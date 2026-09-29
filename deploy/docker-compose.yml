@@ -46,6 +46,10 @@ services:
 
   api:
     <<: *app
+    environment:
+      DATABASE_URL: postgresql://hellofedge:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant}@postgres:5432/hellofedge
+      # Seul Caddy, dans le réseau Docker ci-dessous, peut donner l'adresse du client.
+      FORWARDED_ALLOW_IPS: 172.30.0.0/24
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=4)"]
       interval: 30s
@@ -61,6 +65,18 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+
+  # Commandes ponctuelles de la source de prix (spec 0002), par exemple :
+  #   docker compose run --rm tools hellofedge feed ctrader-accounts
+  #   docker compose run --rm tools hellofedge feed compare
+  # Le dossier exemples/ (points OANDA, rapport de mesure) est monté depuis le VPS.
+  tools:
+    <<: *app
+    command: ["hellofedge", "--help"]
+    volumes:
+      - ./exemples:/app/exemples
+    restart: "no"
+    profiles: ["tools"]
 
   caddy:
     image: caddy:2.11.4
@@ -82,3 +98,10 @@ volumes:
   pgdata:
   caddy_data:
   caddy_config:
+
+# Réseau fixé pour que l'api ne croie les en têtes du proxy que venant d'ici.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
