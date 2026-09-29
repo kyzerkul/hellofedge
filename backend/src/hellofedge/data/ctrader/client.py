@@ -80,6 +80,7 @@ class CTraderClient:
         *,
         heartbeat_seconds: float = 10.0,
         request_timeout: float = 20.0,
+        connect_timeout: float = 5.0,
         bars_per_second: float = 4.0,
     ) -> None:
         self.url = url
@@ -87,6 +88,10 @@ class CTraderClient:
         self._client_secret = client_secret
         self._heartbeat_seconds = heartbeat_seconds
         self._request_timeout = request_timeout
+        # Ouvrir la connexion est rapide quand cTrader répond : un délai court fait
+        # repartir vite le prochain essai quand il ne répond pas. Une grosse
+        # requête de bougies, elle, garde `request_timeout`.
+        self._connect_timeout = connect_timeout
         self.bars_limiter = RateLimiter(bars_per_second)
         self._ws: ClientConnection | None = None
         self._tasks: list[asyncio.Task[None]] = []
@@ -111,7 +116,7 @@ class CTraderClient:
             try:
                 self._ws = await connect(
                     self.url,
-                    open_timeout=self._request_timeout,
+                    open_timeout=self._connect_timeout,
                     max_size=MAX_MESSAGE_BYTES,
                     proxy=None,
                     # Le maintien est celui de cTrader (message 51), pas le ping WebSocket.

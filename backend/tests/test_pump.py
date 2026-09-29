@@ -2,6 +2,7 @@
 une vraie base. Les scénarios suivent les « Critical test scenarios » de la spec."""
 
 import json
+import logging
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
@@ -377,3 +378,67 @@ class TestMarketCalendar:
         with pytest.raises(ValueError):
             parse_holidays("13-40")
         assert parse_holidays("") == frozenset()
+
+
+@pytest.mark.asyncio
+async def test_a_failed_poll_is_logged_with_its_minute_and_time(engine, caplog):
+    # AC-4 : chaque interrogation, réussie ou non, dit la minute visée et l'heure.
+    caplog.set_level(logging.INFO, logger="hellofedge.data.pump")
+    clock = FakeClock(TUESDAY_10H + timedelta(seconds=30))
+    await seed_last(engine, TUESDAY_10H - M1)
+    feed = ReplayFeed(
+        clock,
+        mute=(TUESDAY_10H, TUESDAY_10H + timedelta(minutes=1, seconds=5)),
+        error=FeedUnavailable("injoignable", "reseau"),
+    )
+
+    await run_until(
+        make_pump(engine, feed, clock), clock, TUESDAY_10H + timedelta(minutes=2)
+    )
+
+    polls = [
+        r.data
+        for r in caplog.records
+        if r.getMessage().startswith("interrogation du fournisseur")
+    ]
+    failed = [p for p in polls if "cause" in p]
+    assert failed and len(failed) < len(polls)
+    for p in polls:
+        assert set(p) >= {"minute", "demande"}
+    first = failed[0]
+    assert first["minute"] == TUESDAY_10H.isoformat()
+    assert (
+        first["demande"] == (TUESDAY_10H + timedelta(minutes=1, seconds=3)).isoformat()
+    )
+
+
+class SlowFailingFeed(ReplayFeed):
+    """Comme sur le VPS sans cTrader : chaque essai muet prend 5 secondes (délai
+    de connexion) avant d'échouer."""
+
+    async def closed_since(self, after):
+        if self.muted():
+            await self.clock.sleep(5)
+        return await super().closed_since(after)
+
+
+@pytest.mark.asyncio
+async def test_growing_waits_never_delay_the_outage_past_two_minutes(engine):
+    # AC-5 : l'attente croissante entre deux essais (2, 4, 8, 16, 32 s) ne fait
+    # pas ouvrir la coupure en retard.
+    clock = FakeClock(TUESDAY_10H - timedelta(seconds=10))
+    await seed_last(engine, TUESDAY_10H - 2 * M1)
+    feed = SlowFailingFeed(
+        clock,
+        mute=(TUESDAY_10H - timedelta(minutes=1), TUESDAY_10H + timedelta(hours=1)),
+        error=FeedUnavailable("délai dépassé", "timeout"),
+    )
+    pump = make_pump(engine, feed, clock)
+
+    await run_until(pump, clock, TUESDAY_10H + timedelta(minutes=4))
+
+    (outage,) = await outages(engine)
+    assert outage.cause == "timeout"
+    silence = outage.started_at - (TUESDAY_10H - timedelta(seconds=10))
+    # 2 minutes, plus au plus un essai de 5 secondes en cours.
+    assert timedelta(minutes=2) <= silence <= timedelta(minutes=2, seconds=5)

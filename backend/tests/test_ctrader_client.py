@@ -167,3 +167,34 @@ def test_host_for_env():
     assert host_for("demo") == "wss://demo.ctraderapi.com:5036"
     with pytest.raises(ValueError):
         host_for("prod")
+
+
+@pytest.mark.asyncio
+async def test_a_silent_server_fails_fast_on_connect():
+    # Un serveur qui accepte la connexion TCP mais ne répond jamais : le délai de
+    # connexion, court, joue, pas celui des requêtes.
+    async def mute(reader, writer):
+        await asyncio.sleep(10)
+
+    server = await asyncio.start_server(mute, "127.0.0.1", 0)
+    port = server.sockets[0].getsockname()[1]
+    client = CTraderClient(
+        f"ws://127.0.0.1:{port}",
+        "app-id",
+        SECRET,
+        connect_timeout=0.2,
+        request_timeout=5,
+    )
+    start = time.monotonic()
+    try:
+        with pytest.raises(FeedUnavailable) as info:
+            await client.connect()
+    finally:
+        server.close()
+    assert info.value.cause == "timeout"
+    assert time.monotonic() - start < 2
+
+
+def test_connect_timeout_is_shorter_than_request_timeout():
+    client = CTraderClient("ws://127.0.0.1:1", "app-id", SECRET)
+    assert client._connect_timeout < client._request_timeout

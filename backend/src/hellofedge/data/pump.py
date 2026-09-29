@@ -125,13 +125,18 @@ class FeedPump:
                 self.silence_since = now
             else:
                 await self._check_silence(now)
-            delay = backoff(self.failures) if self.failures else POLL_SECONDS
-            if now + timedelta(seconds=delay) > deadline:
-                self.next_try_at = (
-                    now + timedelta(seconds=delay) if self.failures else None
-                )
+            wake = now + timedelta(
+                seconds=backoff(self.failures) if self.failures else POLL_SECONDS
+            )
+            # L'attente entre deux essais ne dépasse jamais le moment où la coupure
+            # doit s'ouvrir : sinon elle s'ouvrirait après 2 minutes et demie.
+            opens_at = self.silence_since + SILENCE_LIMIT
+            if not rollover and self.outage is None and now < opens_at < wake:
+                wake = opens_at
+            if wake > deadline:
+                self.next_try_at = wake if self.failures else None
                 return
-            await self.sleep(delay)
+            await self.sleep((wake - now).total_seconds())
 
     async def _maintain(self) -> None:
         now = self.clock()
@@ -143,7 +148,7 @@ class FeedPump:
         except FeedError as exc:
             self._failed(exc, "entretien de la source en échec")
 
-    def _failed(self, exc: FeedError, message: str) -> None:
+    def _failed(self, exc: FeedError, message: str, **fields: str | int) -> None:
         self.failures += 1
         self.last_error = exc
         log.warning(
@@ -151,6 +156,7 @@ class FeedPump:
             extra={
                 "data": {
                     "source": self.feed.name,
+                    **fields,
                     "cause": exc.cause,
                     "erreur": str(exc),
                 }
@@ -164,7 +170,14 @@ class FeedPump:
         try:
             candles = await self.feed.closed_since(after)
         except FeedError as exc:
-            self._failed(exc, "interrogation du fournisseur en échec")
+            # Journalisée comme une réussite (minute visée, heure de la demande),
+            # pour que la mesure de l'AC-4 compte aussi les essais manqués.
+            self._failed(
+                exc,
+                "interrogation du fournisseur en échec",
+                minute=expected.isoformat(),
+                demande=asked_at.isoformat(),
+            )
             return False
         self.failures = 0
         self.last_error = None
