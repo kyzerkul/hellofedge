@@ -198,3 +198,21 @@ async def test_a_silent_server_fails_fast_on_connect():
 def test_connect_timeout_is_shorter_than_request_timeout():
     client = CTraderClient("ws://127.0.0.1:1", "app-id", SECRET)
     assert client._connect_timeout < client._request_timeout
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", [Msg.SYMBOLS_LIST_RES, Msg.OA_ERROR_RES])
+async def test_a_payload_that_is_not_an_object_is_an_api_error(kind):
+    # Même cause que le bug trouvé par /test : vaut pour toute réponse, erreurs
+    # comprises (sinon `payload.get("errorCode")` échappait aussi).
+    async with FakeCTrader() as fake:
+        fake.on(Msg.SYMBOLS_LIST_REQ, lambda p: (kind, ["pas", "un", "objet"]))
+        client = client_for(fake)
+        await client.connect()
+        try:
+            with pytest.raises(FeedUnavailable) as info:
+                await client.request(Msg.SYMBOLS_LIST_REQ, {"ctidTraderAccountId": 1})
+        finally:
+            await client.close()
+
+    assert info.value.cause == "erreur_api"

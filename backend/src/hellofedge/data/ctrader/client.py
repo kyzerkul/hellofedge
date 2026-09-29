@@ -222,6 +222,12 @@ class CTraderClient:
     def _check_response(sent: int, frame: dict[str, Any]) -> dict[str, Any]:
         received = frame.get("payloadType")
         payload = frame.get("payload") or {}
+        # Le contenu d'un message est toujours un objet JSON. Autre chose est une
+        # erreur du fournisseur, jamais une exception brute qui arrêterait le flux.
+        if not isinstance(payload, dict):
+            raise FeedUnavailable(
+                f"cTrader : contenu illisible pour {msg_name(sent)}", "erreur_api"
+            )
         if received in (Msg.ERROR_RES, Msg.OA_ERROR_RES):
             code = str(payload.get("errorCode", ""))
             text = f"cTrader refuse {msg_name(sent)} : {code}"

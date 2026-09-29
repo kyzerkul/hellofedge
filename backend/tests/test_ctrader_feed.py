@@ -515,3 +515,27 @@ class TestMalformedAnswers:
                 await feed.aclose()
 
         assert exc.value.cause == "erreur_api"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "answer",
+        [
+            ["pas", "un", "objet"],  # contenu de réponse qui n'est pas un objet
+            {"trendbar": ["abc"]},  # bougie qui n'est pas un objet
+            {"trendbar": [None]},
+        ],
+    )
+    async def test_an_answer_that_is_not_an_object_is_an_api_error(self, answer):
+        # Revue du 2026-09-29 (deuxième passe) : aucune erreur brute ne doit sortir
+        # de l'adaptateur, sinon la boucle du flux s'arrête sans ouvrir de coupure.
+        async with FakeCTrader() as fake:
+            Market(fake)
+            fake.on(Msg.GET_TRENDBARS_REQ, lambda p: (Msg.GET_TRENDBARS_RES, answer))
+            feed = feed_for(fake)
+            try:
+                with pytest.raises(FeedUnavailable) as exc:
+                    await feed.history(self.START, self.START + 5 * M1)
+            finally:
+                await feed.aclose()
+
+        assert exc.value.cause == "erreur_api"
