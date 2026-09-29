@@ -144,6 +144,15 @@ class CTraderFeed:
             await self._maintain(self.client)
 
     async def _load_symbol(self) -> Symbol:
+        try:
+            return await self._read_symbol()
+        except (KeyError, TypeError, ValueError) as exc:
+            raise FeedUnavailable(
+                f"cTrader : liste des symboles illisible ({type(exc).__name__})",
+                "erreur_api",
+            ) from exc
+
+    async def _read_symbol(self) -> Symbol:
         listing = await self.client.request(
             Msg.SYMBOLS_LIST_REQ, {"ctidTraderAccountId": self.account_id}
         )
@@ -225,9 +234,16 @@ class CTraderFeed:
             return await self._range(start, mid) + await self._range(mid, end)
         assert self._symbol is not None
         digits = self._symbol.digits
-        return [
-            c for c in (decode_bar(b, digits) for b in bars) if start <= c.ts_open < end
-        ]
+        try:
+            candles = [decode_bar(b, digits) for b in bars]
+        except (KeyError, TypeError, ValueError) as exc:
+            # Une bougie mal formée est une erreur du fournisseur : la boucle du flux
+            # ouvre une coupure `erreur_api` au lieu de s'arrêter.
+            raise FeedUnavailable(
+                f"cTrader : bougie illisible ({type(exc).__name__}: {exc})",
+                "erreur_api",
+            ) from exc
+        return [c for c in candles if start <= c.ts_open < end]
 
     async def history(self, start: datetime, end: datetime) -> list[Candle]:
         check_utc_minute(start)

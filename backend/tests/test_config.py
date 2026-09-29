@@ -55,3 +55,47 @@ def test_rejects_a_non_numeric_heartbeat_interval(monkeypatch):
 
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_a_env_copied_from_env_example_starts_with_defaults(monkeypatch, tmp_path):
+    # Revue du 2026-09-29, major 2 : les lignes vides de `.env.example` ne cassent
+    # rien et n'écrasent pas les valeurs par défaut.
+    example = Path(__file__).resolve().parents[2] / ".env.example"
+    env = tmp_path / ".env"
+    env.write_text(
+        example.read_text(encoding="utf-8").replace(
+            "DATABASE_URL=\n", "DATABASE_URL=postgresql://u:p@h/db\n"
+        ),
+        encoding="utf-8",
+    )
+    for line in example.read_text(encoding="utf-8").splitlines():
+        name = line.split("=", 1)[0].strip()
+        if name and not name.startswith("#"):
+            monkeypatch.delenv(name, raising=False)
+
+    settings = Settings(_env_file=env)
+
+    assert settings.ctrader_account_id is None
+    assert settings.ctrader_client_id is None
+    assert settings.market_holidays == "12-25,01-01"
+    assert settings.price_source == "ctrader_icmarkets"
+
+
+def test_empty_variables_count_as_absent(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@h/db")
+    monkeypatch.setenv("CTRADER_ACCOUNT_ID", "")
+    monkeypatch.setenv("CTRADER_CLIENT_ID", "")
+    monkeypatch.setenv("MARKET_HOLIDAYS", "")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.ctrader_account_id is None
+    assert settings.ctrader_client_id is None
+    assert settings.market_holidays == "12-25,01-01"
+
+
+def test_an_empty_database_url_is_still_required(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "")
+
+    with pytest.raises(ValidationError, match="database_url"):
+        Settings(_env_file=None)

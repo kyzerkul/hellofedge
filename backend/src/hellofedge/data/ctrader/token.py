@@ -33,7 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from hellofedge.config import Settings
 from hellofedge.data.ctrader.client import CTraderClient
 from hellofedge.data.ctrader.protocol import ALREADY_LOGGED_IN, Msg
-from hellofedge.data.feed import FeedAuthError, FeedError
+from hellofedge.data.feed import FeedAuthError, FeedError, FeedUnavailable
 from hellofedge.data.models import ProviderToken
 
 log = logging.getLogger("hellofedge.data.ctrader")
@@ -62,11 +62,15 @@ RUNBOOK = (
 )
 
 
-class TokenMissing(RuntimeError):
-    """Aucun jeton en base ni dans l'environnement."""
+class TokenMissing(FeedAuthError):
+    """Aucun jeton en base ni dans l'environnement.
+
+    Une `FeedAuthError` : dans le `worker`, elle ouvre une coupure `auth` au lieu
+    d'arrêter la boucle du flux.
+    """
 
 
-class TokenExpiringSoon(RuntimeError):
+class TokenExpiringSoon(FeedAuthError):
     """Le jeton expire trop tôt pour une commande ponctuelle, qui ne renouvelle jamais."""
 
 
@@ -255,11 +259,16 @@ async def refresh_if_needed(
                     "jeton relu en base"
                 )
                 continue
-            renewed = Token(
-                str(payload["accessToken"]),
-                str(payload["refreshToken"]),
-                now + timedelta(seconds=int(payload["expiresIn"])),
-            )
+            try:
+                renewed = Token(
+                    str(payload["accessToken"]),
+                    str(payload["refreshToken"]),
+                    now + timedelta(seconds=int(payload["expiresIn"])),
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                raise FeedUnavailable(
+                    "cTrader : réponse de renouvellement incomplète", "erreur_api"
+                ) from exc
             await _save_renewed(engine, renewed, now, sleep)
             log.info(
                 "jeton cTrader renouvelé",

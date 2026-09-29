@@ -14,7 +14,7 @@ from hellofedge.config import Settings
 from hellofedge.data.ctrader import token as ctoken
 from hellofedge.data.ctrader.client import CTraderClient
 from hellofedge.data.ctrader.protocol import Msg
-from hellofedge.data.feed import FeedAuthError
+from hellofedge.data.feed import FeedAuthError, FeedUnavailable
 from hellofedge.db import make_engine
 from hellofedge.worker import WORKER_LOCK_KEY
 
@@ -396,3 +396,29 @@ async def test_reseed_waits_for_a_renewal_in_progress(engine, db_url):
     stored = await ctoken.load(engine)
     # La ligne finale est celle du `--reseed`, écrite après le renouvellement.
     assert stored is not None and stored.access_token == RESEED_ACCESS
+
+
+@pytest.mark.asyncio
+async def test_an_incomplete_renewal_answer_is_an_api_error(engine, db_url):
+    # Revue du 2026-09-29, major 1 : pas de KeyError brute, et l'ancien jeton reste.
+    async with FakeCTrader() as fake:
+        fake.on(
+            Msg.REFRESH_TOKEN_REQ,
+            lambda p: (Msg.REFRESH_TOKEN_RES, {"accessToken": NEW_ACCESS}),
+        )
+        client = CTraderClient(fake.url, "app-id", "app-secret")
+        await client.connect()
+        try:
+            with pytest.raises(FeedUnavailable) as info:
+                await ctoken.refresh_if_needed(engine, client, settings(db_url), NOW)
+        finally:
+            await client.close()
+
+    assert info.value.cause == "erreur_api"
+    stored = await ctoken.load(engine)
+    assert stored is not None and stored.access_token == ENV_ACCESS
+
+
+def test_token_errors_are_auth_errors_for_the_pump():
+    assert issubclass(ctoken.TokenMissing, FeedAuthError)
+    assert issubclass(ctoken.TokenExpiringSoon, FeedAuthError)

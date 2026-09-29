@@ -458,3 +458,60 @@ class TestMaintain:
                 await feed.aclose()
 
         assert seen == [True]
+
+
+class TestMalformedAnswers:
+    """Revue du 2026-09-29, major 1 : une réponse mal formée est une erreur du
+    fournisseur (`FeedUnavailable`, cause `erreur_api`), jamais une exception brute
+    qui arrêterait la boucle du flux."""
+
+    START = datetime(2026, 8, 24, 10, 0, tzinfo=UTC)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "broken",
+        [
+            {"utcTimestampInMinutes": 29_792_760, "volume": 1},  # pas de `low`
+            {"low": 15_917_400, "volume": 1},  # pas d'heure
+            {"utcTimestampInMinutes": 29_792_760, "low": "abc"},  # prix illisible
+            # Plus haut sous l'ouverture : bougie incohérente.
+            {
+                "utcTimestampInMinutes": 29_792_760,
+                "low": 15_917_400,
+                "deltaOpen": 50,
+                "deltaHigh": 10,
+            },
+        ],
+    )
+    async def test_a_broken_bar_is_an_api_error(self, broken):
+        async with FakeCTrader() as fake:
+            market = Market(fake)
+            market.bars[self.START] = broken
+            feed = feed_for(fake)
+            try:
+                with pytest.raises(FeedUnavailable, match="bougie illisible") as exc:
+                    await feed.history(self.START, self.START + 5 * M1)
+            finally:
+                await feed.aclose()
+
+        assert exc.value.cause == "erreur_api"
+
+    @pytest.mark.asyncio
+    async def test_a_broken_symbol_list_is_an_api_error(self):
+        async with FakeCTrader() as fake:
+            Market(fake)
+            fake.on(
+                Msg.SYMBOLS_LIST_REQ,
+                lambda p: (
+                    Msg.SYMBOLS_LIST_RES,
+                    {"symbol": [{"symbolName": "USDJPY"}]},
+                ),
+            )
+            feed = feed_for(fake)
+            try:
+                with pytest.raises(FeedUnavailable) as exc:
+                    await feed.history(self.START, self.START + 5 * M1)
+            finally:
+                await feed.aclose()
+
+        assert exc.value.cause == "erreur_api"

@@ -14,6 +14,7 @@ from test_measure import FakeClock
 from test_migrations import alembic
 
 from hellofedge.data.candle import M1, Candle, PriceKind
+from hellofedge.data.ctrader.token import TokenExpiringSoon, TokenMissing
 from hellofedge.data.feed import FeedAuthError, FeedUnavailable
 from hellofedge.data.market import MarketCalendar, parse_holidays
 from hellofedge.data.models import CandleM1, FeedOutage
@@ -442,3 +443,32 @@ async def test_growing_waits_never_delay_the_outage_past_two_minutes(engine):
     silence = outage.started_at - (TUESDAY_10H - timedelta(seconds=10))
     # 2 minutes, plus au plus un essai de 5 secondes en cours.
     assert timedelta(minutes=2) <= silence <= timedelta(minutes=2, seconds=5)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("error", "cause"),
+    [
+        (TokenMissing("aucun jeton cTrader en base"), "auth"),
+        (TokenExpiringSoon("le jeton expire"), "auth"),
+        (FeedUnavailable("cTrader : bougie illisible", "erreur_api"), "erreur_api"),
+    ],
+)
+async def test_token_and_decoding_errors_open_an_outage_and_keep_running(
+    engine, error, cause
+):
+    # Revue du 2026-09-29, major 1 : ces erreurs ouvrent une coupure, la boucle
+    # continue, et le flux repart tout seul au retour des bougies.
+    clock = FakeClock(TUESDAY_10H - timedelta(minutes=2) + timedelta(seconds=30))
+    await seed_last(engine, TUESDAY_10H - timedelta(minutes=3))
+    feed = ReplayFeed(
+        clock, mute=(TUESDAY_10H, TUESDAY_10H + timedelta(minutes=4)), error=error
+    )
+
+    await run_until(
+        make_pump(engine, feed, clock), clock, TUESDAY_10H + timedelta(minutes=8)
+    )
+
+    (outage,) = await outages(engine)
+    assert outage.cause == cause
+    assert outage.closed_reason == "retour_flux"

@@ -9,7 +9,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Une variable vide (`CTRADER_ACCOUNT_ID=`, comme dans un `.env` copié depuis
+    # `.env.example`) compte comme absente : la valeur par défaut s'applique, et une
+    # variable obligatoire manquante le dit clairement.
+    model_config = SettingsConfigDict(
+        env_file=".env", extra="ignore", env_ignore_empty=True
+    )
 
     # Obligatoire : sans base, rien ne démarre (échec bruyant plutôt que silencieux).
     database_url: str
