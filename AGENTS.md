@@ -15,10 +15,11 @@ Tout ce qui est destiné au trader (messages, docs, scope, specs, interface) est
 - Aucun secret dans le code, les commits ou le chat. Les secrets vivent dans des variables d'environnement ; `.env.example` ne contient que les noms.
 - Heures stockées et calculées en **UTC**. Affichage à l'heure du Bénin (`Africa/Porto-Novo`, UTC+1). Les sessions sont ancrées sur le fuseau de leur place (Europe/London, America/New_York, Asia/Tokyo).
 - Prise de liquidité = **clôture du corps** au-delà du niveau (M1, M3, M5). IPA touché = une **mèche** suffit.
-- Le M3 est reconstruit à partir du M1 (OANDA ne fournit pas de M3).
+- Le M3 et le M5 sont reconstruits à partir du M1 stocké (seul le M1 vient du fournisseur).
 
 ## Stack
 Décidée dans la spec [0001](docs/specs/0001-stack-architecture/index.md) : un monolithe Python 3.13 (FastAPI, SQLAlchemy 2 et Alembic, PostgreSQL 17) avec deux processus tirés de la même image, `worker` (prix, moteur, alertes) et `api` (API et cockpit), plus un cockpit React et TypeScript (Vite) servi par l'`api`. Déploiement avec Docker Compose et Caddy sur un VPS.
+- Source de prix décidée dans la spec [0002](docs/specs/0002-source-de-prix/index.md) : cTrader Open API sur un compte démo IC Markets (lecture seule), bougies M1 bid. OANDA sert seulement de référence pour mesurer l'écart.
 - Le module `engine` est pur : aucun accès réseau, base ou horloge système. C'est ce qui rend le rejeu identique au direct.
 - Tests : pytest dans `backend/`, Vitest dans `frontend/`. Les choix sont dans `test-preferences.json`.
 - Une bibliothèque s'installe avec la fonction qui en a besoin, jamais en avance.
