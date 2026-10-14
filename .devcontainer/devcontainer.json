@@ -1,0 +1,22 @@
+{
+  // GitHub Codespaces : recherche et mesure cTrader sans VPS. Mode d'emploi : deploy/CODESPACES.md
+  "name": "Hellofedge (recherche cTrader)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/hellofedge",
+  "shutdownAction": "stopCompose",
+  // Les secrets Codespaces du dépôt (CTRADER_*) arrivent comme variables d'environnement.
+  "secrets": {
+    "CTRADER_CLIENT_ID": { "description": "Client ID de l'application (openapi.ctrader.com, page Credentials)" },
+    "CTRADER_CLIENT_SECRET": { "description": "Client Secret de l'application (page Credentials)" },
+    "CTRADER_ACCOUNT_ID": { "description": "ctidTraderAccountId du compte démo IC Markets" },
+    "CTRADER_ACCESS_TOKEN": { "description": "Access token, portée Account info (lecture seule)" },
+    "CTRADER_REFRESH_TOKEN": { "description": "Refresh token du même jeton" }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "charliermarsh.ruff"]
+    }
+  }
+}

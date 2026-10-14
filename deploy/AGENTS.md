@@ -9,6 +9,7 @@ La mise en production sur le VPS : `docker-compose.yml` et `Caddyfile` ici, `Doc
 - `provision.sh` : prépare un VPS Ubuntu 24.04 neuf (mises à jour, chrony, pare feu, swap, Docker, utilisateur `deploy`, cron de sauvegarde). Relançable.
 - `backup.sh` : `pg_dump` compressé chaque nuit, 7 jours gardés.
 - `VPS.md` : le guide pas à pas du trader, de la création du VPS à la mesure cTrader.
+- `CODESPACES.md` et `../.devcontainer/` : recherche cTrader sans VPS dans GitHub Codespaces (PostgreSQL jetable, secrets Codespaces `CTRADER_*`, `bash .devcontainer/mesure.sh`). Pas la production.
 - `../.github/workflows/ci-deploy.yml` : tests à chaque push ; sur `main`, image `ghcr.io/kyzerkul/hellofedge:<commit>` puis déploiement SSH (sauté sans le secret `VPS_HOST`).
 
 ## Déployer (depuis `deploy/`)

@@ -1,0 +1,36 @@
+# Environnement GitHub Codespaces de Hellofedge : l'application et une base PostgreSQL
+# jetable, pour lancer la recherche et la mesure cTrader sans VPS (deploy/CODESPACES.md).
+# Ce n'est pas la production : rien ici ne tourne 24 h/24.
+
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/python:1-3.13-bookworm
+    volumes:
+      - ..:/workspaces/hellofedge:cached
+    command: sleep infinity
+    environment:
+      DATABASE_URL: postgresql://hellofedge:hellofedge@db:5432/hellofedge
+      TEST_DATABASE_URL: postgresql://hellofedge:hellofedge@db:5432/hellofedge_test
+      PRICE_SOURCE: ctrader_icmarkets
+      CTRADER_ENV: demo
+      CTRADER_SYMBOL: USDJPY
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:17.11
+    environment:
+      POSTGRES_USER: hellofedge
+      POSTGRES_PASSWORD: hellofedge
+      POSTGRES_DB: hellofedge
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hellofedge -d hellofedge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
