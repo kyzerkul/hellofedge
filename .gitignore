@@ -21,3 +21,7 @@ data/cache/
 # Divers
 .DS_Store
 node_modules/
+
+# Instantané local de la documentation Tailwind (licence « source available », jamais versionné)
+.claude/skills/tailwind-4-docs/references/docs/
+.claude/skills/tailwind-4-docs/references/docs-index.tsx
