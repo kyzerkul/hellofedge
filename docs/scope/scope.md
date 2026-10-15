@@ -24,7 +24,7 @@ _Ce sont des recommandations pour garder la construction en ordre, pas des oblig
 | 2 | Source de prix (historique et temps réel) | Foundation | in-progress |
 | 3 | Normes de code et outillage | Foundation | planned |
 | 4 | Modèle de données | Foundation | planned |
-| 5 | Design system et base de l'interface | Foundation | planned |
+| 5 | Design system et base de l'interface | Foundation | in-progress |
 | 6 | Connexion (compte unique) | Slice 1 | planned |
 | 7 | Fil minimal : bougie, prise de liquidité, alerte, cockpit | Slice 1 | planned |
 | 8 | Structure : swings, Strong/No Strong, True/Fake BOS | Slice 2 | planned |
@@ -70,10 +70,18 @@ Les entités de base : bougies par unité de temps, niveaux détectés (liquidit
 **Done when:** le modèle porte les tranches 1 à 8 et les futures fonctions différées (journal, retours, étude des sessions) sans migration cassante.
 - [ ] Décider le modèle (spec): `/architect modèle de données`
 
-### 5. Design system et base de l'interface · needs a decision
+### 5. Design system et base de l'interface · in-progress
 Reprendre le langage visuel du prototype (`docs/prototype/hellofedge-cockpit.html`) et le rendre plus fort : couleurs (rouge liquidité, bleu IPA, blanc extrêmes, jaune objectif), typographies et composants de base.
 **Done when:** `design.md` couvre couleurs, typographies, espacements et composants, et les composants de base marchent au clavier comme au doigt.
-- [ ] Décider le design (spec): `/architect design system`
+- [x] Décider le design (spec): `/architect design system`
+- [ ] Construire: `/develop design system`
+  - [ ] Thème, polices, `design.md` et ses gardes (miroir, contraste, couleurs réservées et en dur, domaines tiers) (AC-1, AC-2, AC-3, AC-4, AC-8, AC-11)
+  - [ ] Pages du cockpit, renvoi vers `index.html` côté `api` et formats (prix, heure, nombres) (AC-7, AC-9)
+  - [ ] Composants d'action, d'affichage et de saisie, au clavier comme au doigt (AC-5, AC-6, AC-10)
+  - [ ] États (chargement, vide, erreur, flux) et vitrine complète avec aperçu du graphique et audit d'accessibilité (AC-7, AC-10, AC-12)
+- [ ] Vérifier: `/check verify design system`
+- [ ] Tester: `/test design system`
+Spec [0003](../specs/0003-design-system/index.md) · code dans `frontend/src/design/`, `frontend/src/ui/`, `frontend/src/vitrine/`, `docs/design.md`
 
 ## Slice 1 : le fil complet, en fin
 
@@ -147,6 +155,7 @@ Hors du MVP, gardé ici pour que le plan reste honnête. Ces fonctions viennent 
 - **Coach de discipline** : repère les trades hors plan · needs a decision
 - **Suivi des coûts IA** : dépense mensuelle et plafond · needs a decision
 - **Sauvegardes quotidiennes** : journal, retours et historique · needs a decision
+- **Ruban des sessions** : l'horloge des sessions du prototype (bandes, fixing, fenêtre de setup), sur le design system · from spec 0003
 - **Contrôle des prix FundedNext** : lire les prix MT5 de la prop firm (MetaApi, lecture seule) et mesurer l'écart avec la source principale · from spec 0002
 
 ## Legend
