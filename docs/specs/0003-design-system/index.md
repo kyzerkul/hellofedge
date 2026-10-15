@@ -1,7 +1,7 @@
 # 0003. Design system du cockpit : le langage du prototype, ton code couleur réservé aux niveaux
 
 **Date**: 2026-10-15 · révisée le 2026-10-15 après relecture croisée (25 trous comblés)
-**Status**: Proposed
+**Status**: In Progress
 
 ## Summary
 

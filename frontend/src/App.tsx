@@ -1,22 +1,28 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense } from 'react'
+import Accueil from './pages/Accueil'
+import Introuvable from './pages/Introuvable'
+import { Loading } from './ui/Loading'
 
-type Health = 'chargement' | 'ok' | 'hors service'
+// La vitrine est chargée à part : React Aria ne pèse pas sur l'accueil.
+const Vitrine = lazy(() => import('./vitrine/Vitrine'))
 
-// Squelette du cockpit : il prouve seulement que le cockpit joint l'api et la base.
+/** Page choisie selon l'adresse (pas de bibliothèque de routage, spec 0003). */
+export function pageFor(pathname: string): 'accueil' | 'vitrine' | 'introuvable' {
+  const path = pathname.replace(/\/+$/, '') || '/'
+  if (path === '/') return 'accueil'
+  if (path === '/vitrine') return 'vitrine'
+  return 'introuvable'
+}
+
 export default function App() {
-  const [health, setHealth] = useState<Health>('chargement')
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => setHealth(res.ok ? 'ok' : 'hors service'))
-      .catch(() => setHealth('hors service'))
-  }, [])
-
-  return (
-    <main>
-      <h1>Hellofedge</h1>
-      <p>Cockpit USD/JPY, squelette.</p>
-      <p>État du serveur : {health}</p>
-    </main>
-  )
+  const page = pageFor(window.location.pathname)
+  if (page === 'accueil') return <Accueil />
+  if (page === 'vitrine') {
+    return (
+      <Suspense fallback={<Loading className="p-6" />}>
+        <Vitrine />
+      </Suspense>
+    )
+  }
+  return <Introuvable />
 }

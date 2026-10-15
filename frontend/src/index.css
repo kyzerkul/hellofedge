@@ -1,14 +1,50 @@
-/* Styles provisoires du squelette. Le design system (scope n°5) les remplacera. */
-:root {
-  color-scheme: dark;
-  font-family: system-ui, sans-serif;
-  background: #0b0e14;
-  color: #e6e6e6;
-}
+/* Point d'entrée des styles : Tailwind, le thème du cockpit, les polices livrées avec l'appli. */
+@import "tailwindcss";
+@import "./design/theme.css";
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
+/* Polices (Fontsource, sous ensemble latin : accents français et ¥ compris), graisses utilisées seulement. */
+@import "@fontsource/zen-kaku-gothic-new/latin-500.css";
+@import "@fontsource/zen-kaku-gothic-new/latin-700.css";
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/jetbrains-mono/latin-400.css";
+@import "@fontsource/jetbrains-mono/latin-500.css";
+@import "@fontsource/jetbrains-mono/latin-600.css";
+
+/* Les tests ne sont pas des sources de classes. */
+@source not "./**/*.test.*";
+
+@layer base {
+  html,
+  body {
+    background-color: var(--color-ink);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  /* Les chiffres du cockpit sont alignés en colonne. */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+  }
 }

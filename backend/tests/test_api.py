@@ -105,6 +105,47 @@ class TestCockpitFiles:
         assert client.get("/api/health").status_code == 503
 
 
+class TestCockpitPages:
+    """Spec 0003 : une adresse de page du cockpit renvoie index.html, jamais un 404."""
+
+    @pytest.mark.parametrize("path", ["/vitrine", "/vitrine/", "/foo/bar"])
+    def test_a_page_address_gets_the_cockpit_page(
+        self, make_client, cockpit_dist, path
+    ):
+        response = make_client(DOWN_URL, cockpit_dist).get(path)
+
+        assert response.status_code == 200
+        assert "<title>Hellofedge</title>" in response.text
+
+    @pytest.mark.parametrize("path", ["/", "/vitrine"])
+    def test_the_cockpit_page_is_never_kept_in_cache(
+        self, make_client, cockpit_dist, path
+    ):
+        response = make_client(DOWN_URL, cockpit_dist).get(path)
+
+        assert response.headers["cache-control"] == "no-cache"
+
+    def test_built_assets_keep_their_cache(self, make_client, cockpit_dist):
+        response = make_client(DOWN_URL, cockpit_dist).get("/assets/app.js")
+
+        assert "cache-control" not in response.headers
+
+    def test_an_unknown_api_path_stays_a_json_404(self, make_client, cockpit_dist):
+        response = make_client(DOWN_URL, cockpit_dist).get("/api/inconnu")
+
+        assert response.status_code == 404
+        assert response.headers["content-type"].startswith("application/json")
+
+    @pytest.mark.parametrize(
+        "path", ["/assets/absent.js", "/assets/page", "/favicon.ico"]
+    )
+    def test_a_missing_file_stays_a_404(self, make_client, cockpit_dist, path):
+        response = make_client(DOWN_URL, cockpit_dist).get(path)
+
+        assert response.status_code == 404
+        assert "<title>" not in response.text
+
+
 class TestApiDocs:
     """Revue du 2026-09-29 : la documentation de l'API n'est pas publique en production."""
 

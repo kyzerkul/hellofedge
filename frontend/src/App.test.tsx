@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import App from './App'
+import App, { pageFor } from './App'
 
 // Le seul appel réseau du squelette est /api/health : on le simule à la frontière (fetch).
 const fetchMock = vi.fn<typeof fetch>()
@@ -12,6 +12,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals()
   fetchMock.mockReset()
+  window.history.pushState({}, '', '/')
 })
 
 function answer(status: number) {
@@ -65,5 +66,47 @@ describe('App (squelette du cockpit)', () => {
     render(<App />)
 
     expect(await screen.findByText('État du serveur : hors service')).toBeInTheDocument()
+  })
+})
+
+describe('pages du cockpit (AC-7)', () => {
+  it.each([
+    ['/', 'accueil'],
+    ['/vitrine', 'vitrine'],
+    ['/vitrine/', 'vitrine'],
+    ['/vitrine//', 'vitrine'],
+    ['/foo', 'introuvable'],
+    ['/vitrine/foo', 'introuvable'],
+  ] as const)('%s leads to the %s page', (path, page) => {
+    expect(pageFor(path)).toBe(page)
+  })
+
+  it('links the home page to the showcase', () => {
+    answer(200)
+
+    render(<App />)
+
+    expect(screen.getAllByRole('link', { name: /vitrine/i })[0]).toHaveAttribute('href', '/vitrine')
+  })
+
+  it('opens the showcase at /vitrine/', async () => {
+    window.history.pushState({}, '', '/vitrine/')
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Vitrine du design system' }, { timeout: 5000 }),
+    ).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('shows « Page introuvable » with a way back home at an unknown address', () => {
+    window.history.pushState({}, '', '/foo')
+
+    render(<App />)
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Page introuvable' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: "Retour à l'accueil" })).toHaveAttribute('href', '/')
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

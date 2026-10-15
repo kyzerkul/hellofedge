@@ -74,14 +74,14 @@ Les entités de base : bougies par unité de temps, niveaux détectés (liquidit
 Reprendre le langage visuel du prototype (`docs/prototype/hellofedge-cockpit.html`) et le rendre plus fort : couleurs (rouge liquidité, bleu IPA, blanc extrêmes, jaune objectif), typographies et composants de base.
 **Done when:** `design.md` couvre couleurs, typographies, espacements et composants, et les composants de base marchent au clavier comme au doigt.
 - [x] Décider le design (spec): `/architect design system`
-- [ ] Construire: `/develop design system`
-  - [ ] Thème, polices, `design.md` et ses gardes (miroir, contraste, couleurs réservées et en dur, domaines tiers) (AC-1, AC-2, AC-3, AC-4, AC-8, AC-11)
-  - [ ] Pages du cockpit, renvoi vers `index.html` côté `api` et formats (prix, heure, nombres) (AC-7, AC-9)
-  - [ ] Composants d'action, d'affichage et de saisie, au clavier comme au doigt (AC-5, AC-6, AC-10)
-  - [ ] États (chargement, vide, erreur, flux) et vitrine complète avec aperçu du graphique et audit d'accessibilité (AC-7, AC-10, AC-12)
+- [x] Construire: `/develop design system`
+  - [x] Thème, polices, `design.md` et ses gardes (miroir, contraste, couleurs réservées et en dur, domaines tiers) (AC-1, AC-2, AC-3, AC-4, AC-8, AC-11)
+  - [x] Pages du cockpit, renvoi vers `index.html` côté `api` et formats (prix, heure, nombres) (AC-7, AC-9)
+  - [x] Composants d'action, d'affichage et de saisie, au clavier comme au doigt (AC-5, AC-6, AC-10)
+  - [x] États (chargement, vide, erreur, flux) et vitrine complète avec aperçu du graphique et audit d'accessibilité (AC-7, AC-10, AC-12)
 - [ ] Vérifier: `/check verify design system`
 - [ ] Tester: `/test design system`
-Spec [0003](../specs/0003-design-system/index.md) · code dans `frontend/src/design/`, `frontend/src/ui/`, `frontend/src/vitrine/`, `docs/design.md`
+Spec [0003](../specs/0003-design-system/index.md) · code dans `frontend/src/design/`, `frontend/src/ui/`, `frontend/src/vitrine/`, `frontend/src/pages/`, `backend/src/hellofedge/api/app.py`, `docs/design.md`
 
 ## Slice 1 : le fil complet, en fin
 

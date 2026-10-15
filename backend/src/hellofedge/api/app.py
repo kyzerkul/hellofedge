@@ -8,6 +8,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+from starlette.exceptions import HTTPException
+from starlette.responses import Response
+from starlette.types import Scope
 
 from hellofedge.api import feed
 from hellofedge.config import get_settings
@@ -15,6 +18,38 @@ from hellofedge.db import make_engine
 from hellofedge.logs import setup_logging
 
 log = logging.getLogger("hellofedge.api")
+
+
+class CockpitFiles(StaticFiles):
+    """Fichiers du cockpit, avec renvoi vers `index.html` pour les adresses de pages.
+
+    Le cockpit choisit sa page selon l'adresse (`/vitrine`…). Un rechargement sur une de
+    ces adresses doit donc recevoir `index.html`, jamais un 404. Le renvoi ne touche ni
+    `/api`, ni `/assets`, ni un chemin dont le dernier segment a un point (un fichier absent).
+    """
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        try:
+            response = await super().get_response(path, scope)
+        except HTTPException as exc:
+            if exc.status_code != 404 or not self.is_page(path):
+                raise
+            response = await super().get_response("index.html", scope)
+        if response.status_code == 200 and self.is_index(response):
+            # Les fichiers de assets/ ont un nom haché ; index.html doit toujours être relu.
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
+    @staticmethod
+    def is_page(path: str) -> bool:
+        segments = [s for s in path.split("/") if s and s != "."]
+        if not segments:
+            return True
+        return segments[0] not in ("api", "assets") and "." not in segments[-1]
+
+    @staticmethod
+    def is_index(response: Response) -> bool:
+        return getattr(response, "path", "").endswith("index.html")
 
 
 @asynccontextmanager
@@ -58,7 +93,7 @@ def create_app() -> FastAPI:
     if settings.frontend_dist.is_dir():
         app.mount(
             "/",
-            StaticFiles(directory=settings.frontend_dist, html=True),
+            CockpitFiles(directory=settings.frontend_dist, html=True),
             name="cockpit",
         )
 

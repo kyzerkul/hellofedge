@@ -1,0 +1,124 @@
+/*
+ * Thème du cockpit : la source unique des valeurs (spec 0003).
+ * `docs/design.md` en est le miroir exact ; un test compare les deux dans les deux sens.
+ * Seul ce fichier a le droit d'écrire une couleur en dur.
+ */
+
+@theme static {
+  /* Valeurs par défaut de Tailwind retirées : pas de palette, pas de rayons, pas de tailles. */
+  --color-*: initial;
+  --radius-*: initial;
+  --text-*: initial;
+
+  /* Surfaces et texte */
+  --color-ink: #0C111C;
+  --color-panel: #121A29;
+  --color-panel-2: #172136;
+  --color-line: #22304A;
+  --color-line-soft: #1B263B;
+  --color-text: #E4E8F1;
+  --color-muted: #8A95AD;
+
+  /* Interface */
+  --color-accent: #B39DFF;
+  --color-accent-soft: rgb(179 157 255 / 0.14);
+  --color-buy: #3DBFA3;
+  --color-sell: #E05FB4;
+  --color-danger: #FF8A3D;
+
+  /* Niveaux (réservés, couleurs de TradingView) */
+  --color-level-liquidity: #F23645;
+  --color-level-ipa: #2962FF;
+  --color-level-extreme: #FFFFFF;
+  --color-level-target: #FFEB3B;
+
+  /* Bougies */
+  --color-candle-up: #B8C2D6;
+  --color-candle-down: #5B6782;
+
+  /* Sessions (bandes de fond à 12 % seulement) */
+  --color-session-asia: #7B6CF0;
+  --color-session-frankfurt: #A56A8C;
+  --color-session-london: #3F8FD1;
+  --color-session-trap: #6B7489;
+  --color-session-newyork: #D98C3E;
+  --color-session-londonclose: #4FA58A;
+
+  /* Polices */
+  --font-display: "Zen Kaku Gothic New", "Hiragino Sans", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Tailles du texte (l'interligne 1,45 vient du corps de la page) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+
+  /* Rayons */
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+
+  /* Durées */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+
+  /* Halo de la pastille « en direct » ; ouverture d'une liste */
+  --animate-live-pulse: live-pulse 1.6s ease-in-out infinite;
+  --animate-list-open: list-open 200ms ease-out;
+
+  @keyframes live-pulse {
+    50% {
+      box-shadow: 0 0 0 4px rgb(61 191 163 / 0.25);
+    }
+  }
+
+  @keyframes list-open {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* Au doigt, le corps du texte passe à 15 px. */
+@media (pointer: coarse) {
+  :root {
+    --text-base: 0.9375rem;
+  }
+}
+
+/* Étiquette : 11 px, majuscules, graisse 600. */
+@utility text-label {
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+}
+
+/*
+ * États figés pour la vitrine : chaque variante s'applique avec l'attribut posé par React Aria
+ * ou avec `data-demo`, que la vitrine pose pour montrer les états côte à côte.
+ */
+@custom-variant demo-hovered (&:where([data-hovered], [data-demo~="hovered"]));
+@custom-variant demo-pressed (&:where([data-pressed], [data-demo~="pressed"]));
+@custom-variant demo-focus-visible (&:where([data-focus-visible], [data-demo~="focus-visible"]));
+
+/* Mouvement réduit : aucune animation ni transition, y compris dans React Aria. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
